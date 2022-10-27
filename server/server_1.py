@@ -27,3 +27,14 @@ def handle_client(client_reader, client_writer):
 def main():
     from logger_config import *
     logger_conf()
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(
+        asyncio.start_server(
+            accept_clients,
+            host=utils.IP,
+            port=utils.PORT
+        )
+    )
+    loop.run_forever()
+
