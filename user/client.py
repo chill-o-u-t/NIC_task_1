@@ -1,8 +1,11 @@
+import logging
+
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import QDialog, QApplication
 from PyQt5.QtNetwork import *
 
 import utils
+from logger_config import logger_conf
 
 
 class ClientWindow(QDialog):
@@ -27,10 +30,22 @@ class ClientWindow(QDialog):
         if self.tcpSocket.bytesAvailable() < self.blockSize:
             return
 
+    def request_for_fast_response(self):
+        pass
+
+    def request_for_slow_response(self, delay):
+        pass
+
 
 if __name__ == '__main__':
     import sys
-
+    logger_conf()
+    logging.info('Приложение запущено')
     app = QApplication(sys.argv)
     client = ClientWindow()
+    # ----
+    client.request_for_fast_response()
+    delay = ''
+    client.request_for_slow_response(delay=delay)
+    # ----
     sys.exit(client.exec_())
