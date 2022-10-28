@@ -7,5 +7,5 @@ VARINT_32 = 32
 
 
 def time_now():
-    return datetime.datetime.now().isoformat()
+    return str(datetime.datetime.now().isoformat())
 

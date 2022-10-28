@@ -1,12 +1,11 @@
 import logging
 from logging.handlers import RotatingFileHandler
-from pathlib import Path
 
-BASE_DIR = Path(__file__).parent
+from constants import LOGGER_DIR
 
 
 def logger_conf():
-    logger_dir = BASE_DIR / 'logs'
+    logger_dir = LOGGER_DIR
     logger_dir.mkdir(exist_ok=True)
     logger_file = logger_dir / 'task_1_logger.log'
     rotating_handler = RotatingFileHandler(
