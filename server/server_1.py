@@ -30,30 +30,32 @@ class EchoServer(object):
         r = 0
         return str(r)
 
+    def qbytearray_to_string(self, object) -> float:
+        data_code = 0 # Будет функция перевода
+        return data_code
+
     def FastResponse(self, writer):
-        writer.write(time_now)
+        object = time_now # Далее перевод в QByteArray
+        writer.write(object)
 
     def SlowResponse(self, writer, data):
         await asyncio.sleep(int(data))
-        writer.write(self.count_connections)
+        object = '' # Перевод строки в QByteArray
+        writer.write(object)
 
     @asyncio.coroutine
     def handle_connection(self, reader, writer):
-        # Я пока не понимаю, как обозначается при приеме данных, наличие аргумента
-        # По идее, если data=None, то это fast, но не точно
-        # Но сюда надо еще интегрировать протокол, и пока в душе не *** как
-        # Пока что 1 и что 2
-        what_1 = True
-        what_2 = True
         while not reader.at_eof():
             import concurrent
             try:
                 data = yield from asyncio.wait_for(reader.readline(), timeout=None)
-                writer.write(data)
-                if what_1:
+                data_code = self.qbytearray_to_string(data)
+                if data_code == 0:
                     self.FastResponse(writer)
-                if what_2:
-                    self.SlowResponse(writer, data)
+                elif 10 <= data_code <= 1000:
+                    self.SlowResponse(writer, data_code)
+                else:
+                    logging.error('Недопустимое время дилея')
             except concurrent.futures.TimeoutError:
                 logging.critical('Превышено время ожидания')
                 break
