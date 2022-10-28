@@ -1,4 +1,6 @@
 import asyncio
+import logging
+import os
 
 from utils import time_now
 
@@ -44,6 +46,7 @@ class EchoServer(object):
         what_1 = True
         what_2 = True
         while not reader.at_eof():
+            import concurrent
             try:
                 data = yield from asyncio.wait_for(reader.readline(), timeout=None)
                 writer.write(data)
@@ -51,10 +54,26 @@ class EchoServer(object):
                     self.FastResponse(writer)
                 if what_2:
                     self.SlowResponse(writer, data)
-            except Exception as error:
-                from server.exceptions import SomeException
-                raise SomeException(error)
+            except concurrent.futures.TimeoutError:
+                logging.critical('Превышено время ожидания')
+                break
 
 
 if __name__ == '__main__':
-    pass
+    from logger_config import logger_conf
+    logger_conf()
+    server = EchoServer(os.getenv('SERVER_IP'), os.getenv('DEFAULT_PORT'))
+    logging.info(
+        'Создан сервер: {host}:{port}'.format(
+            host=os.getenv('SERVER_IP'),
+            port=os.getenv('DEFAULT_PORT')
+        )
+    )
+    try:
+        server.start_server()
+        logging.info('Сервер запущен')
+    except KeyboardInterrupt:
+        pass # ctrl + c
+    finally:
+        server.close_server()
+        logging.info('Сервер выключен')
