@@ -34,26 +34,26 @@ class EchoServer(object):
         data_code = 0 # Будет функция перевода
         return data_code
 
-    def FastResponse(self, writer):
+    def fast_response(self, writer):
         object = time_now # Далее перевод в QByteArray
         writer.write(object)
 
-    def SlowResponse(self, writer, data):
+    async def slow_response(self, writer, data):
         await asyncio.sleep(int(data))
         object = '' # Перевод строки в QByteArray
         writer.write(object)
 
-    @asyncio.coroutine
-    def handle_connection(self, reader, writer):
+    async def handle_connection(self, reader, writer):
         while not reader.at_eof():
             import concurrent
             try:
-                data = yield from asyncio.wait_for(reader.readline(), timeout=None)
+                data = ''
+                #data = yield from asyncio.wait_for(reader.readline(), timeout=None)
                 data_code = self.qbytearray_to_string(data)
                 if data_code == 0:
-                    self.FastResponse(writer)
+                    self.fast_response(writer)
                 elif 10 <= data_code <= 1000:
-                    self.SlowResponse(writer, data_code)
+                    self.slow_response(writer, data_code)
                 else:
                     logging.error('Недопустимое время дилея')
             except concurrent.futures.TimeoutError:
