@@ -24,23 +24,33 @@ class EchoServer(object):
         if and_loop:
             self._loop.close()
 
-    def count_of_connections(self):
+    def count_connections(self):
         r = 0
         return str(r)
 
+    def FastResponse(self, writer):
+        writer.write(time_now)
+
+    def SlowResponse(self, writer, data):
+        await asyncio.sleep(int(data))
+        writer.write(self.count_connections)
+
     @asyncio.coroutine
     def handle_connection(self, reader, writer):
+        # Я пока не понимаю, как обозначается при приеме данных, наличие аргумента
+        # По идее, если data=None, то это fast, но не точно
+        # Но сюда надо еще интегрировать протокол, и пока в душе не *** как
+        # Пока что 1 и что 2
+        what_1 = True
+        what_2 = True
         while not reader.at_eof():
             try:
-                # tod: Не понятно, что делать с получением таймаута
                 data = yield from asyncio.wait_for(reader.readline(), timeout=None)
                 writer.write(data)
-                if data is None:
-                    writer.write(time_now)
-                if data is not None:
-                    await asyncio.sleep(int(data))
-                    writer.write(self.count_of_connections)
-
+                if what_1:
+                    self.FastResponse(writer)
+                if what_2:
+                    self.SlowResponse(writer, data)
             except Exception as error:
                 from server.exceptions import SomeException
                 raise SomeException(error)
