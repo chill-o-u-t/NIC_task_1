@@ -9,9 +9,53 @@
 
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtCore import QDataStream, QIODevice
+from PyQt5.QtNetwork import QTcpSocket
+from PyQt5.QtWidgets import QDialog
+
+import utils
 
 
-class Ui_MainWindow(object):
+class Ui_MainWindow(QDialog):
+    def __init__(self):
+        super().__init__()
+        self.tcpSocket = QTcpSocket(self)
+        self.blockSize = 0
+        self.make_request()
+        self.tcpSocket.waitForConnected(10)
+        self.tcpSocket.readyRead.connect(self.deal_communication)
+        #self.tcpSocket.error.connect(self.display_error)
+
+    def make_request(self):
+        self.tcpSocket.connectToHost(utils.IP, utils.PORT, QIODevice.ReadWrite)
+
+    def deal_communication(self):
+        socket = QDataStream(self.tcpSocket)
+        socket.setVersion(QDataStream.Qt_5_0)
+        if self.blockSize == 0:
+            if self.tcpSocket.bytesAvailable() < 2:
+                return
+            self.blockSize = socket.readUInt16()
+        if self.tcpSocket.bytesAvailable() < self.blockSize:
+            return
+        data = str(socket.readString())
+        # Где-то тут будет перевод из QByteArray в строку
+        if len(data) < 3: #Нужна другая реализация, чтобы отличать запросы
+            self.label_2.SetText(data)
+        else:
+            self.label_3.SetText(data)
+        # Как подключить класс Клиента для соеденения к классу интерфейса, хотя скорее все в 1 класс
+
+    def display_error(self):
+        pass
+
+    def request_for_fast_response(self, data):
+        #Прикрепить к кнопке, функционал +- из test_server
+        pass
+
+    def request_for_slow_response(self, delay):
+        pass
+
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(704, 390)
