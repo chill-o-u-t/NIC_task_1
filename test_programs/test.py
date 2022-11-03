@@ -1,10 +1,5 @@
-#!/usr/bin/python3
-# -*- coding: utf-8 -*-
-
 import sys
-from PyQt5.QtWidgets import (QWidget, QSlider, QLabel, QApplication)
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QPushButton, QSizePolicy, QLabel, QFontDialog, QApplication)
 
 
 class Example(QWidget):
@@ -14,28 +9,28 @@ class Example(QWidget):
         self.initUI()
 
     def initUI(self):
-        sld = QSlider(Qt.Horizontal, self)
-        sld.setFocusPolicy(Qt.NoFocus)
-        sld.setGeometry(30, 40, 100, 30)
-        sld.valueChanged[int].connect(self.changeValue)
+        vbox = QVBoxLayout()
 
-        self.label = QLabel(self)
-        self.label.setPixmap(QPixmap('mute.png'))
-        self.label.setGeometry(160, 40, 80, 30)
+        btn = QPushButton('Dialog', self)
+        btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
-        self.setGeometry(300, 300, 280, 170)
-        self.setWindowTitle('QSlider')
+        btn.move(20, 20)
+        vbox.addWidget(btn)
+        btn.clicked.connect(self.showDialog)
+
+        self.lbl = QLabel('Knowledge only matters', self)
+        self.lbl.move(130, 20)
+        vbox.addWidget(self.lbl)
+        self.setLayout(vbox)
+
+        self.setGeometry(300, 300, 250, 180)
+        self.setWindowTitle('Font dialog')
         self.show()
 
-    def changeValue(self, value):
-        if value == 0:
-            self.label.setPixmap(QPixmap('mute.png'))
-        elif value > 0 and value <= 30:
-            self.label.setPixmap(QPixmap('min.png'))
-        elif value > 30 and value < 80:
-            self.label.setPixmap(QPixmap('med.png'))
-        else:
-            self.label.setPixmap(QPixmap('max.png'))
+    def showDialog(self):
+        font, ok = QFontDialog.getFont()
+        if ok:
+            self.lbl.setFont(font)
 
 
 if __name__ == '__main__':

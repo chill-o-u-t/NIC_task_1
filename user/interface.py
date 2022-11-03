@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import datetime
 
 # Form implementation generated from reading ui file 'int_v_1.ui'
 #
@@ -30,6 +31,7 @@ class Ui_MainWindow(QDialog):
         self.tcpSocket.connectToHost(utils.IP, utils.PORT, QIODevice.ReadWrite)
 
     def deal_communication(self):
+        _translate = QtCore.QCoreApplication.translate
         socket = QDataStream(self.tcpSocket)
         socket.setVersion(QDataStream.Qt_5_0)
         if self.blockSize == 0:
@@ -41,7 +43,7 @@ class Ui_MainWindow(QDialog):
         data = str(socket.readString())
         # Где-то тут будет перевод из QByteArray в строку
         if len(data) < 3: #Нужна другая реализация, чтобы отличать запросы
-            self.label_2.SetText(data)
+            self.label_4.setText(_translate("MainWindow", "Output 22"))
         else:
             self.label_3.SetText(data)
         # Как подключить класс Клиента для соеденения к классу интерфейса, хотя скорее все в 1 класс
@@ -55,6 +57,9 @@ class Ui_MainWindow(QDialog):
 
     def request_for_slow_response(self, delay):
         pass
+
+    def test(self):
+        print(datetime.datetime.now())
 
     def setup_ui(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
@@ -94,6 +99,14 @@ class Ui_MainWindow(QDialog):
         font.setPointSize(12)
         self.label_3.setFont(font)
         self.label_3.setObjectName("label_3")
+
+        self.label_4 = QtWidgets.QLabel(self.centralwidget)
+        self.label_4.setGeometry(QtCore.QRect(450, 140, 320, 40))
+        font = QtGui.QFont()
+        font.setPointSize(12)
+        self.label_4.setFont(font)
+        self.label_4.setObjectName("label_4")
+
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 704, 21))
@@ -112,11 +125,10 @@ class Ui_MainWindow(QDialog):
         self.label.setText(_translate("MainWindow", "Введите порт:"))
         self.pushButton.setText(_translate("MainWindow", "PushButton"))
         self.pushButton_2.setText(_translate("MainWindow", "PushButton"))
-        self.label_2.setText(_translate("MainWindow", "Output 1"))
+        self.label_2.setText(_translate("MainWindow", "Output 1:"))
         self.label_3.setText(_translate("MainWindow", "Output 2"))
-
-    def push_buttons(self):
-        pass
+        self.pushButton.clicked.connect(self.request_for_fast_response)
+        self.pushButton_2.clicked.connect(self.request_for_slow_response)
 
 
 if __name__ == "__main__":
