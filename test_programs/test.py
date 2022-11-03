@@ -1,31 +1,41 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+
 import sys
-from PyQt5.QtWidgets import QMainWindow, QPushButton, QApplication
+from PyQt5.QtWidgets import (QWidget, QSlider, QLabel, QApplication)
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPixmap
 
 
-class Example(QMainWindow):
+class Example(QWidget):
 
     def __init__(self):
         super().__init__()
         self.initUI()
 
     def initUI(self):
-        btn1 = QPushButton("Button 1", self)
-        btn1.move(30, 50)
-        btn2 = QPushButton("Button 2", self)
-        btn2.move(150, 50)
+        sld = QSlider(Qt.Horizontal, self)
+        sld.setFocusPolicy(Qt.NoFocus)
+        sld.setGeometry(30, 40, 100, 30)
+        sld.valueChanged[int].connect(self.changeValue)
 
-        btn1.clicked.connect(self.buttonClicked)
-        btn2.clicked.connect(self.buttonClicked)
+        self.label = QLabel(self)
+        self.label.setPixmap(QPixmap('mute.png'))
+        self.label.setGeometry(160, 40, 80, 30)
 
-        self.statusBar()
-
-        self.setGeometry(300, 300, 290, 150)
-        self.setWindowTitle('Event sender')
+        self.setGeometry(300, 300, 280, 170)
+        self.setWindowTitle('QSlider')
         self.show()
 
-    def buttonClicked(self):
-        sender = self.sender()
-        self.statusBar().showMessage(sender.text() + ' was pressed')
+    def changeValue(self, value):
+        if value == 0:
+            self.label.setPixmap(QPixmap('mute.png'))
+        elif value > 0 and value <= 30:
+            self.label.setPixmap(QPixmap('min.png'))
+        elif value > 30 and value < 80:
+            self.label.setPixmap(QPixmap('med.png'))
+        else:
+            self.label.setPixmap(QPixmap('max.png'))
 
 
 if __name__ == '__main__':

@@ -11,7 +11,7 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import QDataStream, QIODevice
 from PyQt5.QtNetwork import QTcpSocket
-from PyQt5.QtWidgets import QDialog
+from PyQt5.QtWidgets import QDialog, QPushButton
 
 import utils
 
@@ -24,7 +24,7 @@ class Ui_MainWindow(QDialog):
         self.make_request()
         self.tcpSocket.waitForConnected(10)
         self.tcpSocket.readyRead.connect(self.deal_communication)
-        #self.tcpSocket.error.connect(self.display_error)
+        self.tcpSocket.error.connect(self.display_error)
 
     def make_request(self):
         self.tcpSocket.connectToHost(utils.IP, utils.PORT, QIODevice.ReadWrite)
@@ -56,7 +56,7 @@ class Ui_MainWindow(QDialog):
     def request_for_slow_response(self, delay):
         pass
 
-    def setupUi(self, MainWindow):
+    def setup_ui(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(704, 390)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
@@ -103,10 +103,10 @@ class Ui_MainWindow(QDialog):
         self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusBar(self.statusbar)
 
-        self.retranslateUi(MainWindow)
+        self.retranslate_ui(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
-    def retranslateUi(self, MainWindow):
+    def retranslate_ui(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.label.setText(_translate("MainWindow", "Введите порт:"))
@@ -115,12 +115,15 @@ class Ui_MainWindow(QDialog):
         self.label_2.setText(_translate("MainWindow", "Output 1"))
         self.label_3.setText(_translate("MainWindow", "Output 2"))
 
+    def push_buttons(self):
+        pass
+
 
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
     ui = Ui_MainWindow()
-    ui.setupUi(MainWindow)
+    ui.setup_ui(MainWindow)
     MainWindow.show()
     sys.exit(app.exec_())
