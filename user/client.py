@@ -9,13 +9,15 @@ from logger_config import logger_conf
 
 
 class ClientWindow(QDialog):
-    def __init__(self):
+    def __init__(self, wait_to_connection):
         super().__init__()
         self.tcpSocket = QTcpSocket(self)
         self.blockSize = 0
         self.make_request()
-        self.tcpSocket.waitForConnected()
+        self.tcpSocket.waitForConnected(wait_to_connection)
         self.tcpSocket.readyRead.connect(self.deal_communication)
+        self.tcpSocket.readyRead.connect(self.dealCommunication)
+        self.tcpSocket.error.connect(self.displayError)
 
     def make_request(self):
         self.tcpSocket.connectToHost(utils.IP, utils.PORT, QIODevice.ReadWrite)
@@ -29,6 +31,13 @@ class ClientWindow(QDialog):
             self.blockSize = socket.readUInt16()
         if self.tcpSocket.bytesAvailable() < self.blockSize:
             return
+        data = str(socket.readString())
+        # Где-то тут будет перевод из QByteArray в строку
+        if len(data) > 3: #Нужна другая реализация, чтобы отличать запросы
+            ui.label_2.SetText(data)
+        else:
+            ui.label_3.SetText(data)
+        # Как подключить класс Клиента для соеденения к классу интерфейса, хотя скорее все в 1 класс
 
     def request_for_fast_response(self):
         pass
