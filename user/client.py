@@ -1,5 +1,7 @@
 import logging
 
+# import PyQt5
+# from PyQt5 import QtWidgets
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import QDialog, QApplication
 from PyQt5.QtNetwork import *
