@@ -23,7 +23,7 @@ class Client(QDialog):
         self.time_out = 1
         self.tcpSocket = QTcpSocket(self)
         self.blockSize = 0
-        self.make_request()
+        #self.make_request()
         self.tcpSocket.waitForConnected(self.time_out)
         self.tcpSocket.write(b'hello')
         self.tcpSocket.readyRead.connect(self.dealCommunication)
@@ -171,7 +171,7 @@ class Ui_MainWindow(Client):
         pass
         #port_text = self.textEdit_2.toPlainText()
         #port = int(port_text)
-        #host = self.textEdit.toPlainText()
+        host = self.textEdit.toPlainText()
         #self.tcpSocket.connectToHost(host, port, QIODevice.ReadWrite)
 
     def dealCommunication(self):
