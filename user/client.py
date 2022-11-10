@@ -1,7 +1,7 @@
 import logging
 import re
 
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtCore, QtWidgets
 
 from constants import TIMEOUT
 
@@ -20,20 +20,17 @@ from PyQt5.QtNetwork import QTcpSocket, QAbstractSocket
 class Client(QDialog):
     def __init__(self):
         super().__init__()
+        self.time_out = 1
         self.tcpSocket = QTcpSocket(self)
         self.blockSize = 0
-        self.makeRequest()
-        self.tcpSocket.waitForConnected(1000)
-        # send any message you like it could come from a widget text.
+        self.make_request()
+        self.tcpSocket.waitForConnected(self.time_out)
         self.tcpSocket.write(b'hello')
         self.tcpSocket.readyRead.connect(self.dealCommunication)
         self.tcpSocket.error.connect(self.displayError)
 
 
 class Ui_MainWindow(Client):
-    def __init__(self):
-        self.time_out = 1
-
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(800, 600)
@@ -143,7 +140,7 @@ class Ui_MainWindow(Client):
                 self.time_out = int(self.textEdit_3.toPlainText())
         except Exception:
             logging.info('Set default timeout 1 second')
-        self.make_request(text_host, port)
+        self.make_request()
         self.label_3.setText('Successful connection')
 
     def check_delay(self):
@@ -170,8 +167,12 @@ class Ui_MainWindow(Client):
         self.label_7.setText('output')
         pass
 
-    def make_request(self, host, port):
-        self.tcpSocket.connectToHost(host, port, QIODevice.ReadWrite)
+    def make_request(self):
+        pass
+        #port_text = self.textEdit_2.toPlainText()
+        #port = int(port_text)
+        #host = self.textEdit.toPlainText()
+        #self.tcpSocket.connectToHost(host, port, QIODevice.ReadWrite)
 
     def dealCommunication(self):
         instr = QDataStream(self.tcpSocket)
