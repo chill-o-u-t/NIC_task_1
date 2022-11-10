@@ -4,6 +4,7 @@ import re
 from PyQt5 import QtCore, QtWidgets
 
 from user.constants import TIMEOUT
+from tcp_connection_pb2 import *
 
 TEXT = "MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
@@ -159,8 +160,9 @@ class Ui_MainWindow(Client):
         if self.textEdit_4.toPlainText() == '':
             self.label_7.setText('Set delay from 10 ms to 1000ms')
         ...
-        self.label_8.setText('output')
-        pass
+        self.label_8.setText(
+            SlowResponse.SerializeToString('Тут будет то, что пришло')
+        )
 
     def fast_request(self):
         ...
