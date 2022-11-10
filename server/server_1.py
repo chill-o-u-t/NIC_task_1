@@ -2,7 +2,7 @@ import asyncio
 import logging
 import os
 
-from utils import time_now
+from server.utils import time_now
 
 
 class EchoServer(object):
@@ -62,8 +62,6 @@ class EchoServer(object):
 
 
 if __name__ == '__main__':
-    from logger_config import logger_conf
-    logger_conf()
     server = EchoServer(os.getenv('SERVER_IP'), os.getenv('DEFAULT_PORT'))
     logging.info(
         'Создан сервер: {host}:{port}'.format(

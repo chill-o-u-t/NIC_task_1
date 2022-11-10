@@ -3,7 +3,7 @@ import re
 
 from PyQt5 import QtCore, QtWidgets
 
-from constants import TIMEOUT
+from user.constants import TIMEOUT
 
 TEXT = "MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
@@ -12,8 +12,8 @@ TEXT = "MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http:
 "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" color:#00aa00;\">logs </span></p></body></html>"
 
 
-from PyQt5.QtCore import QDataStream, QIODevice
-from PyQt5.QtWidgets import QApplication, QDialog
+from PyQt5.QtCore import QDataStream
+from PyQt5.QtWidgets import QDialog
 from PyQt5.QtNetwork import QTcpSocket, QAbstractSocket
 
 
