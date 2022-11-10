@@ -1,3 +1,4 @@
+import logging
 import re
 
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -11,9 +12,28 @@ TEXT = "MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http:
 "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" color:#00aa00;\">logs </span></p></body></html>"
 
 
-class Ui_MainWindow(object):
+from PyQt5.QtCore import QDataStream, QIODevice
+from PyQt5.QtWidgets import QApplication, QDialog
+from PyQt5.QtNetwork import QTcpSocket, QAbstractSocket
+
+
+class Client(QDialog):
+    def __init__(self):
+        super().__init__()
+        self.tcpSocket = QTcpSocket(self)
+        self.blockSize = 0
+        self.makeRequest()
+        self.tcpSocket.waitForConnected(1000)
+        # send any message you like it could come from a widget text.
+        self.tcpSocket.write(b'hello')
+        self.tcpSocket.readyRead.connect(self.dealCommunication)
+        self.tcpSocket.error.connect(self.displayError)
+
+
+class Ui_MainWindow(Client):
     def __init__(self):
         self.time_out = 1
+
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(800, 600)
@@ -107,8 +127,9 @@ class Ui_MainWindow(object):
         if text_port == '':
             self.label_3.setText('Port is None')
             return
-        # if re.compile():
-        # Копмпиль на соответствие Ip адресу
+        if re.match('\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', text_host) == None:
+            self.label_3.setText('Invalid IP')
+            return
         if len(text_port) > 4:
             self.label_3.setText('Port error')
             return
@@ -117,20 +138,57 @@ class Ui_MainWindow(object):
         except Exception:
             self.label_3.setText('Port error')
             return
-        #if int(self.textEdit_3.toPlainText()) in TIMEOUT:
-        #    self.time_out = int(self.textEdit_3.toPlainText())
-        # self.dealcommunication()
+        try:
+            if int(self.textEdit_3.toPlainText()) in TIMEOUT:
+                self.time_out = int(self.textEdit_3.toPlainText())
+        except Exception:
+            logging.info('Set default timeout 1 second')
+        self.make_request(text_host, port)
         self.label_3.setText('Successful connection')
+
+    def check_delay(self):
+        delay_text = self.textEdit_4.toPlainText()
+        try:
+            delay = int(delay_text)
+        except Exception:
+            # logging
+            return
+        if delay < 10 or delay > 1000:
+            # logging
+            return
+        self.slow_request(delay)
 
     def slow_request(self):
         if self.textEdit_4.toPlainText() == '':
             self.label_7.setText('Set delay from 10 ms to 1000ms')
         ...
         self.label_8.setText('output')
+        pass
 
     def fast_request(self):
         ...
         self.label_7.setText('output')
+        pass
+
+    def make_request(self, host, port):
+        self.tcpSocket.connectToHost(host, port, QIODevice.ReadWrite)
+
+    def dealCommunication(self):
+        instr = QDataStream(self.tcpSocket)
+        instr.setVersion(QDataStream.Qt_5_0)
+        if self.blockSize == 0:
+            if self.tcpSocket.bytesAvailable() < 2:
+                return
+            self.blockSize = instr.readUInt16()
+        if self.tcpSocket.bytesAvailable() < self.blockSize:
+            return
+        #print(str(instr.readString(), encoding='ascii'))
+
+    def displayError(self, socketError):
+        if socketError == QAbstractSocket.RemoteHostClosedError:
+            pass
+        else:
+            pass
 
 
 if __name__ == "__main__":
