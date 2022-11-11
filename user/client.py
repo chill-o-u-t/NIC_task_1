@@ -154,13 +154,16 @@ class Ui_MainWindow(QDialog):
             delay = int(delay_text)
         except Exception:
             # logging
-            return
+            return False
         if 10 <= delay <= 1000:
             # logging
-            return
-        self.slow_request(delay)
+            return False
+        return True
 
     def slow_request(self):
+        if not self.check_delay:
+            # logging
+            return
         if self.textEdit_4.toPlainText() == '':
             self.label_7.setText('Set delay from 10 ms to 1000ms')
         data = self.protocol.request_for_fast_response.ParseToString(
@@ -192,8 +195,6 @@ class Ui_MainWindow(QDialog):
             self.label_6.setText(str(data))
         if ...:
             self.label_7.setText(str(data))
-
-
 
 
 if __name__ == "__main__":
