@@ -2,6 +2,7 @@ import asyncio
 import logging
 import os
 
+import tcp_connection_pb2
 from server.utils import time_now
 
 
@@ -13,7 +14,6 @@ class EchoServer(object):
             self.handle_connection,
             host=host,
             port=port,
-            #loop=self._loop
         )
 
     def start_server(self, and_loop=True):
@@ -40,16 +40,15 @@ class EchoServer(object):
 
     async def slow_response(self, writer, data):
         await asyncio.sleep(int(data))
-        object = '' # Перевод строки в QByteArray
+        object = tcp_connection_pb2.SlowResponse(self.count_connections())
         writer.write(object)
 
     async def handle_connection(self, reader, writer):
         while not reader.at_eof():
             import concurrent
             try:
-                data = ''
                 #data = yield from asyncio.wait_for(reader.readline(), timeout=None)
-                data_code = self.qbytearray_to_string(data)
+                data_code = int(self.qbytearray_to_string(data))
                 if data_code == 0:
                     self.fast_response(writer)
                 elif 10 <= data_code <= 1000:
@@ -62,17 +61,19 @@ class EchoServer(object):
 
 
 if __name__ == '__main__':
-    server = EchoServer(os.getenv('SERVER_IP'), os.getenv('DEFAULT_PORT'))
+    from logging_config import configure_logging
+    configure_logging()
+    server = EchoServer(host='127.0.0.1', port=8000)
     logging.info(
         'Создан сервер: {host}:{port}'.format(
-            host=os.getenv('SERVER_IP'),
-            port=os.getenv('DEFAULT_PORT')
+            host='127.0.0.1', port=8000
         )
     )
     try:
         server.start_server()
         logging.info('Сервер запущен')
-    except KeyboardInterrupt:
+    except Exception as error:
+        logging.error(error)
         pass # ctrl + c
     finally:
         server.close_server()

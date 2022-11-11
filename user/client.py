@@ -3,6 +3,7 @@ import re
 
 from PyQt5 import QtCore, QtWidgets
 
+import tcp_connection_pb2
 from user.constants import TIMEOUT
 from tcp_connection_pb2 import *
 
@@ -29,6 +30,7 @@ class Client(QDialog):
         self.tcpSocket.write(b'hello')
         self.tcpSocket.readyRead.connect(self.dealCommunication)
         self.tcpSocket.error.connect(self.displayError)
+        self.protocol = WrapperMessage
 
 
 class Ui_MainWindow(Client):
@@ -93,7 +95,6 @@ class Ui_MainWindow(Client):
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
         self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusBar(self.statusbar)
-
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
@@ -157,6 +158,8 @@ class Ui_MainWindow(Client):
         self.slow_request(delay)
 
     def slow_request(self):
+        data = self.textEdit_4.toPlainText()
+        self.make_request(data)
         if self.textEdit_4.toPlainText() == '':
             self.label_7.setText('Set delay from 10 ms to 1000ms')
         ...
@@ -165,6 +168,7 @@ class Ui_MainWindow(Client):
         )
 
     def fast_request(self):
+        data = self.protocol.RequestForFastResponse.ParseToString('0')
         ...
         self.label_7.setText('output')
         pass
