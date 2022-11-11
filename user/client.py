@@ -19,7 +19,7 @@ from PyQt5.QtWidgets import QDialog
 from PyQt5.QtNetwork import QTcpSocket, QAbstractSocket
 
 
-class Client(QDialog):
+class Ui_MainWindow(QDialog):
     def __init__(self):
         super().__init__()
         self.time_out = 1
@@ -32,8 +32,6 @@ class Client(QDialog):
         self.tcpSocket.error.connect(self.displayError)
         self.protocol = WrapperMessage
 
-
-class Ui_MainWindow(Client):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(800, 600)
@@ -118,6 +116,7 @@ class Ui_MainWindow(Client):
         self.pushButton.clicked.connect(self.check_data_host_and_port)
 
     def check_data_host_and_port(self):
+        # проверка айпи на <256
         text_host = self.textEdit.toPlainText()
         text_port = self.textEdit_2.toPlainText()
         if text_host == '':
@@ -129,6 +128,10 @@ class Ui_MainWindow(Client):
         if re.match('\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', text_host) == None:
             self.label_3.setText('Invalid IP')
             return
+        for num in text_host.split('.'):
+            if int(num) > 255:
+                self.label_3.setText('Invalid IP')
+                return
         if len(text_port) > 4:
             self.label_3.setText('Port error')
             return
@@ -152,50 +155,45 @@ class Ui_MainWindow(Client):
         except Exception:
             # logging
             return
-        if delay < 10 or delay > 1000:
+        if 10 <= delay <= 1000:
             # logging
             return
         self.slow_request(delay)
 
     def slow_request(self):
-        data = self.textEdit_4.toPlainText()
-        self.make_request(data)
         if self.textEdit_4.toPlainText() == '':
             self.label_7.setText('Set delay from 10 ms to 1000ms')
-        ...
-        self.label_8.setText(
-            SlowResponse.SerializeToString('Тут будет то, что пришло')
+        data = self.protocol.request_for_fast_response.ParseToString(
+            self.textEdit_4.toPlainText()
         )
+        self.tcpSocket.write(data)
 
     def fast_request(self):
-        data = self.protocol.RequestForFastResponse.ParseToString('0')
-        ...
-        self.label_7.setText('output')
-        pass
+        data = self.protocol.request_for_fast_response.ParseToString('0')
+        self.tcpSocket.write(data)
 
     def make_request(self):
-        pass
-        #port_text = self.textEdit_2.toPlainText()
-        #port = int(port_text)
-        host = self.textEdit.toPlainText()
-        #self.tcpSocket.connectToHost(host, port, QIODevice.ReadWrite)
+        self.tcpSocket.connectToHost(\
+            host=self.textEdit.toPlainText(),
+            port=int(self.textEdit_2.toPlainText()),
+            #QIODevice.ReadWrite
+        )
 
-    def dealCommunication(self):
+    def deal_communication(self):
         instr = QDataStream(self.tcpSocket)
-        instr.setVersion(QDataStream.Qt_5_0)
         if self.blockSize == 0:
             if self.tcpSocket.bytesAvailable() < 2:
                 return
             self.blockSize = instr.readUInt16()
         if self.tcpSocket.bytesAvailable() < self.blockSize:
             return
-        #print(str(instr.readString(), encoding='ascii'))
+        data = self.protocol.SerializeToString(instr)
+        if ...:
+            self.label_6.setText(str(data))
+        if ...:
+            self.label_7.setText(str(data))
 
-    def displayError(self, socketError):
-        if socketError == QAbstractSocket.RemoteHostClosedError:
-            pass
-        else:
-            pass
+
 
 
 if __name__ == "__main__":

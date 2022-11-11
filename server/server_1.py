@@ -47,6 +47,7 @@ class EchoServer(object):
         while not reader.at_eof():
             import concurrent
             try:
+                data = 0
                 #data = yield from asyncio.wait_for(reader.readline(), timeout=None)
                 data_code = int(self.qbytearray_to_string(data))
                 if data_code == 0:
