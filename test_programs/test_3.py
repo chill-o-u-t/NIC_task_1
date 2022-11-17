@@ -1,58 +1,112 @@
-import sys
-from PyQt5 import QtCore, QtGui, QtWidgets
+import asyncio
+import logging
+
+log = logging.getLogger(__name__)
+
+clients = {}  # task -> (reader, writer)
 
 
-# from PyQt5 import QtWidgets
+def make_connection(host, port):
 
-# Импортируем наш шаблон.
-# from pp import Ui_MainWindow
+    task = asyncio.Task(handle_client(host, port))
 
+    clients[task] = (host, port)
 
-class Ui_MainWindow(object):
-    def setupUi(self, MainWindow):
-        MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(800, 600)
-        self.centralwidget = QtWidgets.QWidget(MainWindow)
-        self.centralwidget.setObjectName("centralwidget")
-        self.textEdit = QtWidgets.QTextEdit(self.centralwidget)
-        self.textEdit.setGeometry(QtCore.QRect(100, 140, 104, 71))
-        self.textEdit.setObjectName("textEdit")
-        self.pushButton = QtWidgets.QPushButton(self.centralwidget)
-        self.pushButton.setGeometry(QtCore.QRect(110, 250, 75, 23))
-        self.pushButton.setObjectName("pushButton")
-        MainWindow.setCentralWidget(self.centralwidget)
-        self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 800, 21))
-        self.menubar.setObjectName("menubar")
-        MainWindow.setMenuBar(self.menubar)
-        self.statusbar = QtWidgets.QStatusBar(MainWindow)
-        self.statusbar.setObjectName("statusbar")
-        MainWindow.setStatusBar(self.statusbar)
+    def client_done(task):
+        del clients[task]
+        log.info("Client Task Finished")
+        if len(clients) == 0:
+            log.info("clients is empty, stopping loop.")
+            loop = asyncio.get_event_loop()
+            loop.stop()
 
-        self.retranslateUi(MainWindow)
-        mytext = self.textEdit.toPlainText()
-        self.pushButton.clicked.connect(self.copy_text)
-        QtCore.QMetaObject.connectSlotsByName(MainWindow)
-
-    def retranslateUi(self, MainWindow):
-        _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
-        self.pushButton.setText(_translate("MainWindow", "PushButton"))
-
-    def copy_text(self):
-        text = self.textEdit.toPlainText()  # <---   - text()   +++ toPlainText
-        print(text)
+    log.info("New Client Task")
+    task.add_done_callback(client_done)
 
 
-class mywindow(QtWidgets.QMainWindow):
-    def __init__(self):
-        super(mywindow, self).__init__()
-        self.ui = Ui_MainWindow()
-        self.ui.setupUi(self)
+def handle_client(host, port):
+    log.info("Connecting to %s %d", host, port)
+    client_reader, client_writer = yield from asyncio.open_connection(host,
+                                                                      port)
+    log.info("Connected to %s %d", host, port)
+    try:
+        # looking for a hello
+        # give client a chance to respond, timeout after 10 seconds
+        data = yield from asyncio.wait_for(client_reader.readline(),
+                                           timeout=10.0)
 
+        if data is None:
+            log.warning("Expected HELLO, received None")
+            return
+
+        sdata = data.decode().rstrip().upper()
+        log.info("Received %s", sdata)
+        if sdata != "HELLO":
+            log.warning("Expected HELLO, received '%s'", sdata)
+            return
+
+        # send back a WORLD
+        client_writer.write("WORLD\n".encode())
+
+        # wait for a READY
+        data = yield from asyncio.wait_for(client_reader.readline(),
+                                           timeout=10.0)
+
+        if data is None:
+            log.warning("Expected READY, received None")
+            return
+
+        sdata = data.decode().rstrip().upper()
+        if sdata != "READY":
+            log.warning("Expected READY, received '%s'", sdata)
+            return
+
+        echostrings = ['one', 'two', 'three', 'four', 'five', 'six']
+
+        for echostring in echostrings:
+            # send each string and get a reply, it should be an echo back
+            client_writer.write(("%s\n" % echostring).encode())
+            data = yield from asyncio.wait_for(client_reader.readline(),
+                                               timeout=10.0)
+            if data is None:
+                log.warning("Echo received None")
+                return
+
+            sdata = data.decode().rstrip()
+            log.info(sdata)
+
+        # send BYE to disconnect gracefully
+        client_writer.write("BYE\n".encode())
+
+        # receive BYE confirmation
+        data = yield from asyncio.wait_for(client_reader.readline(),
+                                           timeout=10.0)
+
+        sdata = data.decode().rstrip().upper()
+        log.info("Received '%s'" % sdata)
+    finally:
+        log.info("Disconnecting from %s %d", host, port)
+        client_writer.close()
+        log.info("Disconnected from %s %d", host, port)
+
+
+def main():
+    log.info("MAIN begin")
+    loop = asyncio.get_event_loop()
+    for x in range(200):
+        make_connection('localhost', 2991)
+    loop.run_forever()
+    log.info("MAIN end")
 
 if __name__ == '__main__':
-    app = QtWidgets.QApplication([])
-    application = mywindow()
-    application.show()
-    sys.exit(app.exec_())
+    log = logging.getLogger("")
+    formatter = logging.Formatter("%(asctime)s %(levelname)s " +
+                                  "[%(module)s:%(lineno)d] %(message)s")
+    # setup console logging
+    log.setLevel(logging.DEBUG)
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+
+    ch.setFormatter(formatter)
+    log.addHandler(ch)
+    main()

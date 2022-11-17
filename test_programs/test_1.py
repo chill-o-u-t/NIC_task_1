@@ -18,6 +18,7 @@ class Client(QDialog):
         HOST = '127.0.0.1'
         PORT = 8000
         self.tcpSocket.connectToHost(HOST, PORT, QIODevice.ReadWrite)
+        self.tcpSocket.write()
 
     def dealCommunication(self):
         print('aa')
