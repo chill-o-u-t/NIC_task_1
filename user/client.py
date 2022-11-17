@@ -21,15 +21,10 @@ from PyQt5.QtNetwork import QTcpSocket, QAbstractSocket
 class Client(QDialog):
     def __init__(self):
         super().__init__()
-        self.message = tcp_connection_pb2.WrapperMessage
-        self.time_out = 1
+        self.message = tcp_connection_pb2.WrapperMessage()
+        self.time_out = 1000
         self.tcpSocket = QTcpSocket(self)
         self.blockSize = 0
-        #self.make_request()
-        self.tcpSocket.waitForConnected(self.time_out)
-        self.tcpSocket.write(b'hello')
-        self.tcpSocket.readyRead.connect(self.dealCommunication)
-        self.tcpSocket.error.connect(self.displayError)
 
 
 class Ui_MainWindow(Client):
@@ -38,9 +33,6 @@ class Ui_MainWindow(Client):
         MainWindow.resize(800, 600)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
-        self.pushButton = QtWidgets.QPushButton(self.centralwidget)
-        self.pushButton.setGeometry(QtCore.QRect(40, 50, 111, 41))
-        self.pushButton.setObjectName("pushButton")
         self.textEdit = QtWidgets.QTextEdit(self.centralwidget)
         self.textEdit.setGeometry(QtCore.QRect(210, 50, 104, 40))
         self.textEdit.setObjectName("textEdit")
@@ -101,7 +93,6 @@ class Ui_MainWindow(Client):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
-        self.pushButton.setText(_translate("MainWindow", "Create Connetction"))
         self.label.setText(_translate("MainWindow", "IP address"))
         self.label_2.setText(_translate("MainWindow", "Port"))
         self.label_3.setText(_translate("MainWindow", "Succesfull conection or error"))
@@ -113,9 +104,8 @@ class Ui_MainWindow(Client):
         self.label_7.setText(_translate("MainWindow", "output slow /////////////////////////////////////////////////////////////"))
         self.label_8.setText(_translate("MainWindow", "output fast /////////////////////////////////////////////////////////////"))
         #self.textBrowser.setHtml(_translate(TEXT))
-        self.pushButton_2.clicked.connect(self.slow_request)
-        #self.pushButton_3.clicked.connect()
-        self.pushButton.clicked.connect(self.check_data_host_and_port)
+        self.pushButton_3.clicked.connect(self.slow_request)
+        self.pushButton_2.clicked.connect(self.fast_request)
 
     def check_data_host_and_port(self):
         text_host = self.textEdit.toPlainText()
@@ -148,8 +138,9 @@ class Ui_MainWindow(Client):
                 self.time_out = int(self.textEdit_3.toPlainText())
         except Exception:
             logging.info('Set default timeout 1 second')
-        self.make_request()
+        self.make_request('localhost', port)
         self.label_3.setText('Successful connection')
+        return True
 
     def check_delay(self):
         delay_text = self.textEdit_4.toPlainText()
@@ -163,50 +154,63 @@ class Ui_MainWindow(Client):
             return
         if delay == 0:
             return 1
-        return delay
+        return delay // 10
 
     def slow_request(self):
+        if not self.check_data_host_and_port():
+            print('error')
         delay = self.check_delay() # получает делай в виде числа после валидации
         instance = tcp_connection_pb2.RequestForSlowResponse()
-        instance.time_in_seconds_to_sleep = int(delay)
-        self.message.request_for_slow_response.CopyForm(instance)
-        self.tcpSocket.write(self.message.SerializeToString())
-        self.message.clear()
-        # Конец блока отправки сообщения
-        self.message.ParseFromString(self.dealCommunication())
-        if self.message.HasField('request_for_slow_response'):
-            self.label_8.setText(
-                self.message.slow_response.connected_client_count
-            )
-            self.message.clear()
-            logging.info('Successful data received')
-        else:
-            logging.error('')
-            self.message.clear()
-            return
+        try:
+            instance.time_in_seconds_to_sleep = int(delay)
+            self.message.request_for_slow_response.CopyFrom(instance)
+            self.tcpSocket.write(self.message.SerializeToString())
+            print(self.message)
+            self.message.Clear()
+            self.tcpSocket.waitForConnected(self.time_out)
+            data = self.tcpSocket.readAll()
+            # Конец блока отправки сообщения
+            self.message.ParseFromString(data)
+            print(data)
+            if self.message.HasField('request_for_slow_response'):
+                self.label_8.setText(
+                    self.message.slow_response.connected_client_count
+                )
+                self.message.Clear()
+                logging.info('Successful data received')
+            else:
+                logging.error('')
+                self.message.Clear()
+                return
+        except Exception as error:
+            print(error)
 
     def fast_request(self):
+        if not self.check_data_host_and_port():
+            print('error')
         instance = tcp_connection_pb2.RequestForFastResponse()
-        self.message.request_for_fast_response.CopyFrom(instance)
-        self.tcpSocket.write(self.message.SerializeToString())
-        self.message.clear()
-        # end of send
-        self.message.ParseFromString(self.dealCommunication())
-        if self.message.HasField('request_for_fast_response'):
-            self.label_7.setText(
-                self.message.fast_response.current_date_time
-            )
-            self.message.clear()
-        else:
-            logging.error()
-            self.message.clear()
+        try:
+            self.message.request_for_fast_response.CopyFrom(instance)
+            self.tcpSocket.write(self.message.SerializeToString())
+            self.message.Clear()
+            # end of send
+            self.message.ParseFromString(self.dealCommunication())
+            print(6)
+            if self.message.HasField('request_for_fast_response'):
+                print(7)
+                self.label_7.setText(
+                    self.message.fast_response.current_date_time
+                )
+                self.message.Сlear()
+            else:
+                logging.error('')
+                self.message.Сlear()
+        except Exception as error:
+            print(error)
 
-    def make_request(self):
-        port_text = self.textEdit_2.toPlainText()
-        port = int(port_text)
-        host = self.textEdit.toPlainText()
+    def make_request(self, host, port):
+        print(port, host)
         self.tcpSocket.connectToHost(host, port, QIODevice.ReadWrite)
-        print(self.tcpSocket)
 
     def dealCommunication(self):
         instr = QDataStream(self.tcpSocket)
