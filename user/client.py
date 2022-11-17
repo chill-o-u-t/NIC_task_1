@@ -24,7 +24,6 @@ class Client(QDialog):
         self.message = tcp_connection_pb2.WrapperMessage()
         self.time_out = 1000
         self.tcpSocket = QTcpSocket(self)
-        self.blockSize = 0
 
 
 class Ui_MainWindow(Client):
@@ -121,10 +120,11 @@ class Ui_MainWindow(Client):
         ) is None:
             self.label_3.setText('Invalid IP')
             return
-        #ip = text_port.split('.')
-        #for block in ip:
-        #    if block > 255:
-        #        self.label_3.setText('Invalid IP')
+        ip = map(int,  text_host.split('.'))
+        for block in ip:
+            if block > 255:
+                self.label_3.setText('Invalid IP')
+                return
         if len(text_port) > 4:
             self.label_3.setText('Port error')
             return
@@ -144,21 +144,19 @@ class Ui_MainWindow(Client):
 
     def check_delay(self):
         delay_text = self.textEdit_4.toPlainText()
-        try:
+        if delay_text == '':
+            delay = 10
+        else:
             delay = int(delay_text)
-        except Exception:
-            # logging
-            return
         if delay < 10 or delay > 1000:
             # logging
             return
-        if delay == 0:
-            return 1
         return delay // 10
 
     def slow_request(self):
         if not self.check_data_host_and_port():
             print('error')
+            return
         delay = self.check_delay() # получает делай в виде числа после валидации
         instance = tcp_connection_pb2.RequestForSlowResponse()
         try:
@@ -194,17 +192,18 @@ class Ui_MainWindow(Client):
             self.tcpSocket.write(self.message.SerializeToString())
             self.message.Clear()
             # end of send
-            self.message.ParseFromString(self.dealCommunication())
-            print(6)
+            data = self.tcpSocket.readAll()
+            self.message.ParseFromString(data)
+            print(data)
             if self.message.HasField('request_for_fast_response'):
                 print(7)
                 self.label_7.setText(
                     self.message.fast_response.current_date_time
                 )
-                self.message.Сlear()
+                self.message.Clear()
             else:
                 logging.error('')
-                self.message.Сlear()
+                self.message.Clear()
         except Exception as error:
             print(error)
 
