@@ -3,12 +3,13 @@ from collections import defaultdict
 
 import tcp_connection_pb2
 from utils import time_now
-HOST = '127.0.0.1'
+HOST = 'localhost'
 PORT = 8000
 
 
 class EchoServer(object):
     def __init__(self):
+        self.message = tcp_connection_pb2.WrapperMessage()
         self._loop = asyncio.new_event_loop()
         self._loop.run_until_complete(self.start_server())
         self.reader = asyncio.StreamReader
