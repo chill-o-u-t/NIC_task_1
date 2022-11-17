@@ -3,8 +3,8 @@ import re
 
 from PyQt5 import QtCore, QtWidgets
 
+import tcp_connection_pb2
 from user.constants import TIMEOUT
-from tcp_connection_pb2 import *
 
 TEXT = "MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
@@ -13,7 +13,7 @@ TEXT = "MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http:
 "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" color:#00aa00;\">logs </span></p></body></html>"
 
 
-from PyQt5.QtCore import QDataStream
+from PyQt5.QtCore import QDataStream, QIODevice
 from PyQt5.QtWidgets import QDialog
 from PyQt5.QtNetwork import QTcpSocket, QAbstractSocket
 
@@ -21,6 +21,7 @@ from PyQt5.QtNetwork import QTcpSocket, QAbstractSocket
 class Client(QDialog):
     def __init__(self):
         super().__init__()
+        self.message = tcp_connection_pb2.WrapperMessage
         self.time_out = 1
         self.tcpSocket = QTcpSocket(self)
         self.blockSize = 0
@@ -112,7 +113,7 @@ class Ui_MainWindow(Client):
         self.label_7.setText(_translate("MainWindow", "output slow /////////////////////////////////////////////////////////////"))
         self.label_8.setText(_translate("MainWindow", "output fast /////////////////////////////////////////////////////////////"))
         #self.textBrowser.setHtml(_translate(TEXT))
-        #self.pushButton_2.clicked.connect(self.slow_request)
+        self.pushButton_2.clicked.connect(self.slow_request)
         #self.pushButton_3.clicked.connect()
         self.pushButton.clicked.connect(self.check_data_host_and_port)
 
@@ -125,9 +126,15 @@ class Ui_MainWindow(Client):
         if text_port == '':
             self.label_3.setText('Port is None')
             return
-        if re.match('\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', text_host) == None:
+        if re.match(
+                '\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', text_host
+        ) is None:
             self.label_3.setText('Invalid IP')
             return
+        #ip = text_port.split('.')
+        #for block in ip:
+        #    if block > 255:
+        #        self.label_3.setText('Invalid IP')
         if len(text_port) > 4:
             self.label_3.setText('Port error')
             return
@@ -154,27 +161,52 @@ class Ui_MainWindow(Client):
         if delay < 10 or delay > 1000:
             # logging
             return
-        self.slow_request(delay)
+        if delay == 0:
+            return 1
+        return delay
 
     def slow_request(self):
-        if self.textEdit_4.toPlainText() == '':
-            self.label_7.setText('Set delay from 10 ms to 1000ms')
-        ...
-        self.label_8.setText(
-            SlowResponse.SerializeToString('Тут будет то, что пришло')
-        )
+        delay = self.check_delay() # получает делай в виде числа после валидации
+        instance = tcp_connection_pb2.RequestForSlowResponse()
+        instance.time_in_seconds_to_sleep = int(delay)
+        self.message.request_for_slow_response.CopyForm(instance)
+        self.tcpSocket.write(self.message.SerializeToString())
+        self.message.clear()
+        # Конец блока отправки сообщения
+        self.message.ParseFromString(self.dealCommunication())
+        if self.message.HasField('request_for_slow_response'):
+            self.label_8.setText(
+                self.message.slow_response.connected_client_count
+            )
+            self.message.clear()
+            logging.info('Successful data received')
+        else:
+            logging.error('')
+            self.message.clear()
+            return
 
     def fast_request(self):
-        ...
-        self.label_7.setText('output')
-        pass
+        instance = tcp_connection_pb2.RequestForFastResponse()
+        self.message.request_for_fast_response.CopyFrom(instance)
+        self.tcpSocket.write(self.message.SerializeToString())
+        self.message.clear()
+        # end of send
+        self.message.ParseFromString(self.dealCommunication())
+        if self.message.HasField('request_for_fast_response'):
+            self.label_7.setText(
+                self.message.fast_response.current_date_time
+            )
+            self.message.clear()
+        else:
+            logging.error()
+            self.message.clear()
 
     def make_request(self):
-        pass
-        #port_text = self.textEdit_2.toPlainText()
-        #port = int(port_text)
+        port_text = self.textEdit_2.toPlainText()
+        port = int(port_text)
         host = self.textEdit.toPlainText()
-        #self.tcpSocket.connectToHost(host, port, QIODevice.ReadWrite)
+        self.tcpSocket.connectToHost(host, port, QIODevice.ReadWrite)
+        print(self.tcpSocket)
 
     def dealCommunication(self):
         instr = QDataStream(self.tcpSocket)
@@ -185,7 +217,7 @@ class Ui_MainWindow(Client):
             self.blockSize = instr.readUInt16()
         if self.tcpSocket.bytesAvailable() < self.blockSize:
             return
-        #print(str(instr.readString(), encoding='ascii'))
+        return instr
 
     def displayError(self, socketError):
         if socketError == QAbstractSocket.RemoteHostClosedError:
