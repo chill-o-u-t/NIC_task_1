@@ -1,7 +1,7 @@
 import asyncio
-from collections import defaultdict
 
 import tcp_connection_pb2
+from server.exceptions import SomeException
 from utils import time_now
 HOST = 'localhost'
 PORT = 8000
@@ -12,31 +12,33 @@ class EchoServer(object):
         self.message = tcp_connection_pb2.WrapperMessage()
         self._loop = asyncio.new_event_loop()
         self._loop.run_until_complete(self.start_server())
-        self.reader = asyncio.StreamReader
-        self.writer = asyncio.StreamWriter
-        self.users = defaultdict()
+        self.users = 0
 
-    def connections(self):
-        pass
-
-    async def echo_handle(self):
-        protocol = tcp_connection_pb2.WrapperMessage
-        while not self.reader.at_eof():
-            data = await self.reader.read(1024)
-            message = protocol.SerializeToString(data)
-            assert type(message) == str
-            address, port = self.writer.get_extra_info('peername')
-            self.users[f'{address}:{port}'] = 1
-            if message == '0':
-                msg = protocol.fast_response.ParseToString(time_now())
-            if 1000 > int(message) > 10:
-                msg = protocol.slow_response.ParseToString(sum(self.users.values()))
-                await asyncio.sleep(int(message))
-            self.writer.write(msg)
-            await self.writer.drain()
-            self.users[f'{address}:{port}'] = 0
+    async def echo_handle(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
+        while not reader.at_eof():
+            self.users += 1
+            data = await reader.read(1024)
+            self.message.ParseFromString(data)
+            if self.message.HasField('request_for_fast_response'):
+                self.message.fast_response.current_date_time = time_now()
+                writer.write(self.message.SerializeToString())
+                await writer.drain()
+                self.message.Clear()
+            if self.message.HasField('request_for_slow_response'):
+                delay = self.message.request_for_slow_response.time_in_seconds_to_sleep
+                instance = tcp_connection_pb2.SlowResponse()
+                instance.connected_client_count = self.users
+                self.message.slow_response.CopyForm(instance)
+                await asyncio.sleep(int(delay))
+                writer.write(self.message.SerializeToString())
+                await writer.drain()
+                self.message.Clear
+            else:
+                raise SomeException('')
+            self.users -= 1
 
     async def start_server(self) -> None:
+        print(f'Server started on {HOST}:{PORT}')
         server = await asyncio.start_server(self.echo_handle, HOST, PORT)
         async with server:
             await server.serve_forever()
@@ -44,3 +46,4 @@ class EchoServer(object):
 
 if __name__ == '__main__':
     server = EchoServer()
+    server.start_server()
