@@ -21,9 +21,11 @@ from PyQt5.QtNetwork import QTcpSocket, QAbstractSocket
 class Client(QDialog):
     def __init__(self):
         super().__init__()
+        self.blockSize = 0
         self.message = tcp_connection_pb2.WrapperMessage()
         self.time_out = 1000
         self.tcpSocket = QTcpSocket(self)
+        self.tcpSocket.readyRead.connect(self.dealCommunication)
 
 
 class Ui_MainWindow(Client):
@@ -157,29 +159,13 @@ class Ui_MainWindow(Client):
         if not self.check_data_host_and_port():
             print('error')
             return
-        delay = self.check_delay() # получает делай в виде числа после валидации
         instance = tcp_connection_pb2.RequestForSlowResponse()
         try:
-            instance.time_in_seconds_to_sleep = int(delay)
+            instance.time_in_seconds_to_sleep = self.check_delay()
             self.message.request_for_slow_response.CopyFrom(instance)
             self.tcpSocket.write(self.message.SerializeToString())
             print(self.message)
             self.message.Clear()
-            self.tcpSocket.waitForConnected(self.time_out)
-            data = self.tcpSocket.readAll()
-            # Конец блока отправки сообщения
-            self.message.ParseFromString(data)
-            print(data)
-            if self.message.HasField('request_for_slow_response'):
-                self.label_8.setText(
-                    self.message.slow_response.connected_client_count
-                )
-                self.message.Clear()
-                logging.info('Successful data received')
-            else:
-                logging.error('')
-                self.message.Clear()
-                return
         except Exception as error:
             print(error)
 
@@ -190,25 +176,13 @@ class Ui_MainWindow(Client):
         try:
             self.message.request_for_fast_response.CopyFrom(instance)
             self.tcpSocket.write(self.message.SerializeToString())
+            print(self.message)
             self.message.Clear()
-            # end of send
-            data = self.tcpSocket.readAll()
-            self.message.ParseFromString(data)
-            print(data)
-            if self.message.HasField('request_for_fast_response'):
-                print(7)
-                self.label_7.setText(
-                    self.message.fast_response.current_date_time
-                )
-                self.message.Clear()
-            else:
-                logging.error('')
-                self.message.Clear()
         except Exception as error:
             print(error)
 
     def make_request(self, host, port):
-        print(port, host)
+        print(f'{host}:{port}')
         self.tcpSocket.connectToHost(host, port, QIODevice.ReadWrite)
 
     def dealCommunication(self):
@@ -219,14 +193,23 @@ class Ui_MainWindow(Client):
                 return
             self.blockSize = instr.readUInt16()
         if self.tcpSocket.bytesAvailable() < self.blockSize:
+            #print(1)
             return
-        return instr
-
-    def displayError(self, socketError):
-        if socketError == QAbstractSocket.RemoteHostClosedError:
-            pass
+        self.message.ParseFromString(instr.readQString())
+        if self.message.HasField('request_for_fast_response'):
+            self.label_7.setText(
+                self.message.fast_response.current_date_time
+            )
+        elif self.message.HasField('request_for_slow_response'):
+            self.label_8.setText(
+                self.message.slow_response.connected_client_count
+            )
+            logging.info('Successful data received')
         else:
-            pass
+            logging.error('')
+            self.message.Clear()
+            return
+        self.message.Clear()
 
 
 if __name__ == "__main__":
