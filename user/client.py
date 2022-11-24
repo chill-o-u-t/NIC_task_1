@@ -26,6 +26,7 @@ class Client(QDialog):
         self.time_out = 1000
         self.tcpSocket = QTcpSocket(self)
         self.tcpSocket.readyRead.connect(self.deal_communication)
+        self.logger = logging.getLogger('main')
 
 
 class Ui_MainWindow(Client):
@@ -76,9 +77,9 @@ class Ui_MainWindow(Client):
         self.label_8 = QtWidgets.QLabel(self.centralwidget)
         self.label_8.setGeometry(QtCore.QRect(380, 210, 310, 40))
         self.label_8.setObjectName("label_8")
-        self.textBrowser = QtWidgets.QTextBrowser(self.centralwidget)
-        self.textBrowser.setGeometry(QtCore.QRect(40, 361, 641, 211))
-        self.textBrowser.setObjectName("textBrowser")
+        self.textEdit_logger = QtWidgets.QTextBrowser(self.centralwidget)
+        self.textEdit_logger.setGeometry(QtCore.QRect(40, 361, 641, 211))
+        self.textEdit_logger.setObjectName("textBrowser")
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 800, 21))
@@ -104,7 +105,6 @@ class Ui_MainWindow(Client):
         self.label_6.setText(_translate("MainWindow", "Delay"))
         self.label_7.setText(_translate("MainWindow", "output slow /////////////////////////////////////////////////////////////"))
         self.label_8.setText(_translate("MainWindow", "output fast /////////////////////////////////////////////////////////////"))
-        #self.textBrowser.setHtml(_translate(TEXT))
         self.pushButton_3.clicked.connect(self.slow_request)
         self.pushButton_2.clicked.connect(self.fast_request)
 
@@ -169,6 +169,10 @@ class Ui_MainWindow(Client):
             print(error)
 
     def fast_request(self) -> None:
+        self.logger.info('fast request')
+        self.textEdit_logger.insertPlainText(
+            '!'
+        )
         if not self.check_data_host_and_port():
             print('error')
         instance = tcp_connection_pb2.RequestForFastResponse()
@@ -210,7 +214,7 @@ class Ui_MainWindow(Client):
             return
         self.message.Clear()
 
-    def create_logger(path, widget: QtWidgets.QTextEdit) -> None:
+    def create_logger(self) -> None:
         log = logging.getLogger('main')
         log.setLevel(logging.DEBUG)
         file_formatter = logging.Formatter(
@@ -226,7 +230,7 @@ class Ui_MainWindow(Client):
         log_window_formatter = logging.Formatter(
             '#%(levelname)-s, %(message)s\n'
         )
-        file_handler = logging.FileHandler(path)
+        file_handler = logging.FileHandler('/logs')
         file_handler.setLevel(logging.DEBUG)
         file_handler.setFormatter(file_formatter)
 
@@ -236,7 +240,7 @@ class Ui_MainWindow(Client):
         console_handler.setFormatter(console_formatter)
 
         log_window_handler = logging.Handler()
-        log_window_handler.emit = lambda record: widget.insertPlainText(
+        log_window_handler.emit = lambda record: self.textEdit_logger.insertPlainText(
             log_window_handler.format(record)
         )
         log_window_handler.setLevel(logging.DEBUG)
@@ -249,5 +253,6 @@ if __name__ == "__main__":
     MainWindow = QtWidgets.QMainWindow()
     ui = Ui_MainWindow()
     ui.setupUi(MainWindow)
+    logging.error('a')
     MainWindow.show()
     sys.exit(app.exec_())

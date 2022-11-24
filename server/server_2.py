@@ -3,6 +3,7 @@ import logging
 import os
 
 import tcp_connection_pb2
+from server.exceptions import SomeException
 from utils import time_now
 HOST = os.getenv('SERVER_IP')
 PORT = os.getenv('DEFAULT_PORT')
