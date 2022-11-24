@@ -118,12 +118,11 @@ class Ui_MainWindow(Client):
             self.label_3.setText('Port is None')
             return
         if re.match(
-                '\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', text_host
+            '\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', text_host
         ) is None:
             self.label_3.setText('Invalid IP')
             return
-        ip = map(int,  text_host.split('.'))
-        for block in ip:
+        for block in map(int,  text_host.split('.')):
             if block > 255:
                 self.label_3.setText('Invalid IP')
                 return
@@ -132,7 +131,7 @@ class Ui_MainWindow(Client):
             return
         try:
             port = int(text_port)
-        except Exception:
+        except ValueError:
             self.label_3.setText('Port error')
             return
         try:
