@@ -25,7 +25,7 @@ class Client(QDialog):
         self.message = tcp_connection_pb2.WrapperMessage()
         self.time_out = 1000
         self.tcpSocket = QTcpSocket(self)
-        self.tcpSocket.readyRead.connect(self.dealCommunication)
+        self.tcpSocket.readyRead.connect(self.deal_communication)
 
 
 class Ui_MainWindow(Client):
@@ -185,7 +185,7 @@ class Ui_MainWindow(Client):
         print(f'{host}:{port}')
         self.tcpSocket.connectToHost(host, port, QIODevice.ReadWrite)
 
-    def dealCommunication(self):
+    def deal_communication(self):
         instr = QDataStream(self.tcpSocket)
         instr.setVersion(QDataStream.Qt_5_0)
         if self.blockSize == 0:
@@ -210,6 +210,38 @@ class Ui_MainWindow(Client):
             self.message.Clear()
             return
         self.message.Clear()
+
+    def create_logger(path, widget: QtWidgets.QTextEdit):
+        log = logging.getLogger('main')
+        log.setLevel(logging.DEBUG)
+        file_formatter = logging.Formatter(
+            ('#%(levelname)-s, %(pathname)s, line %(lineno)d, [%(asctime)s]: '
+             '%(message)s'), datefmt='%Y-%m-%d %H:%M:%S'
+        )
+        console_formatter = logging.Formatter(
+            (
+                '#%(levelname)-s, %(pathname)s, '
+                'line %(lineno)d: %(message)s'
+            )
+        )
+        log_window_formatter = logging.Formatter(
+            '#%(levelname)-s, %(message)s\n'
+        )
+        file_handler = logging.FileHandler(path)
+        file_handler.setLevel(logging.DEBUG)
+        file_handler.setFormatter(file_formatter)
+
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(console_formatter)
+        console_handler.setLevel(logging.DEBUG)
+        console_handler.setFormatter(console_formatter)
+
+        log_window_handler = logging.Handler()
+        log_window_handler.emit = lambda record: widget.insertPlainText(
+            log_window_handler.format(record)
+        )
+        log_window_handler.setLevel(logging.DEBUG)
+        log_window_handler.setFormatter(log_window_formatter)
 
 
 if __name__ == "__main__":
