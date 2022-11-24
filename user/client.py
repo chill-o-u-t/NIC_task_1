@@ -169,7 +169,7 @@ class Ui_MainWindow(Client):
         except Exception as error:
             print(error)
 
-    def fast_request(self):
+    def fast_request(self) -> None:
         if not self.check_data_host_and_port():
             print('error')
         instance = tcp_connection_pb2.RequestForFastResponse()
@@ -181,11 +181,11 @@ class Ui_MainWindow(Client):
         except Exception as error:
             print(error)
 
-    def make_request(self, host, port):
+    def make_request(self, host, port) -> None:
         print(f'{host}:{port}')
         self.tcpSocket.connectToHost(host, port, QIODevice.ReadWrite)
 
-    def deal_communication(self):
+    def deal_communication(self) -> None:
         instr = QDataStream(self.tcpSocket)
         instr.setVersion(QDataStream.Qt_5_0)
         if self.blockSize == 0:
@@ -211,7 +211,7 @@ class Ui_MainWindow(Client):
             return
         self.message.Clear()
 
-    def create_logger(path, widget: QtWidgets.QTextEdit):
+    def create_logger(path, widget: QtWidgets.QTextEdit) -> None:
         log = logging.getLogger('main')
         log.setLevel(logging.DEBUG)
         file_formatter = logging.Formatter(
