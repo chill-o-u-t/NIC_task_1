@@ -1,6 +1,9 @@
 import logging
 
-LOG_FORMAT = "[%(asctime)s]:[%(filename)s:%(lineno)d] - %(levelname)s - %(name)s - %(message)s"
+LOG_FORMAT = (
+    "[%(asctime)s]:[%(filename)s:%(lineno)d] "
+    "- %(levelname)s - %(name)s - %(message)s"
+)
 
 
 class CustomLogFormatter(logging.Formatter):
