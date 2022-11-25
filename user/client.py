@@ -48,10 +48,10 @@ class Client(QDialog):
 
 
 class UiMainWindow(Client):
-    def setup_ui(self, MainWindow):
-        MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(800, 600)
-        self.central_widget = QtWidgets.QWidget(MainWindow)
+    def setup_ui(self, main_window):
+        main_window.setObjectName("MainWindow")
+        main_window.resize(800, 600)
+        self.central_widget = QtWidgets.QWidget(main_window)
         self.central_widget.setObjectName("central-widget")
 
         # text_edits
@@ -119,16 +119,16 @@ class UiMainWindow(Client):
         sys.stderr.write = self.request_std(sys.stderr.write)
 
         # other
-        MainWindow.setCentralWidget(self.central_widget)
-        self.menubar = QtWidgets.QMenuBar(MainWindow)
+        main_window.setCentralWidget(self.central_widget)
+        self.menubar = QtWidgets.QMenuBar(main_window)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 800, 21))
         self.menubar.setObjectName("menubar")
-        MainWindow.setMenuBar(self.menubar)
-        self.statusbar = QtWidgets.QStatusBar(MainWindow)
+        main_window.setMenuBar(self.menubar)
+        self.statusbar = QtWidgets.QStatusBar(main_window)
         self.statusbar.setObjectName("statusbar")
-        MainWindow.setStatusBar(self.statusbar)
-        self.retranslate_ui(MainWindow)
-        QtCore.QMetaObject.connectSlotsByName(MainWindow)
+        main_window.setStatusBar(self.statusbar)
+        self.retranslate_ui(main_window)
+        QtCore.QMetaObject.connectSlotsByName(main_window)
         logging.info('Interface created')
 
     def retranslate_ui(self, main_window):
@@ -195,7 +195,7 @@ class UiMainWindow(Client):
             timeout_digit = int(timeout)
         except ValueError:
             logging.info('Timeout is empty or wrong')
-            return  
+            return
         if timeout_digit in TIMEOUT:
             self.time_out = int(self.text_edit_timeout.toPlainText())
             return
