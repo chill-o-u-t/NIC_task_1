@@ -1,13 +1,14 @@
 import logging
 import re
 from PyQt6 import QtCore, QtWidgets
+from PyQt6.QtGui import QTextCursor
+from PyQt6.QtCore import QDataStream, QIODevice
+from PyQt6.QtNetwork import QTcpSocket
+from PyQt6.QtWidgets import QDialog
 
 import tcp_connection_pb2
 from user.constants import TIMEOUT
-
-from PyQt6.QtCore import QDataStream, QIODevice
-from PyQt6.QtNetwork import QTcpSocket, QAbstractSocket
-from PyQt6.QtWidgets import QDialog
+from logger_config import CustomLogFormatter
 
 
 class Client(QDialog):
@@ -18,7 +19,6 @@ class Client(QDialog):
         self.time_out = 1000
         self.tcpSocket = QTcpSocket(self)
         self.tcpSocket.readyRead.connect(self.deal_communication)
-        self.logger = logging.getLogger('main')
 
     @staticmethod
     def is_empty(object):
@@ -53,12 +53,21 @@ class Ui_MainWindow(Client):
         MainWindow.resize(800, 600)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
+        #text_edits
         self.textEdit = QtWidgets.QTextEdit(self.centralwidget)
         self.textEdit.setGeometry(QtCore.QRect(210, 50, 104, 40))
         self.textEdit.setObjectName("textEdit")
         self.textEdit_2 = QtWidgets.QTextEdit(self.centralwidget)
         self.textEdit_2.setGeometry(QtCore.QRect(370, 50, 104, 40))
         self.textEdit_2.setObjectName("textEdit_2")
+        self.textEdit_3 = QtWidgets.QTextEdit(self.centralwidget)
+        self.textEdit_3.setGeometry(QtCore.QRect(40, 130, 104, 40))
+        self.textEdit_3.setObjectName("textEdit_3")
+        self.textEdit_4 = QtWidgets.QTextEdit(self.centralwidget)
+        self.textEdit_4.setGeometry(QtCore.QRect(210, 290, 104, 40))
+        self.textEdit_4.setObjectName("textEdit_4")
+
+        #labels
         self.label = QtWidgets.QLabel(self.centralwidget)
         self.label.setGeometry(QtCore.QRect(210, 30, 100, 13))
         self.label.setObjectName("label")
@@ -68,24 +77,12 @@ class Ui_MainWindow(Client):
         self.label_3 = QtWidgets.QLabel(self.centralwidget)
         self.label_3.setGeometry(QtCore.QRect(520, 50, 170, 40))
         self.label_3.setObjectName("label_3")
-        self.pushButton_2 = QtWidgets.QPushButton(self.centralwidget)
-        self.pushButton_2.setGeometry(QtCore.QRect(40, 210, 111, 41))
-        self.pushButton_2.setObjectName("pushButton_2")
-        self.pushButton_3 = QtWidgets.QPushButton(self.centralwidget)
-        self.pushButton_3.setGeometry(QtCore.QRect(40, 290, 111, 41))
-        self.pushButton_3.setObjectName("pushButton_3")
-        self.textEdit_3 = QtWidgets.QTextEdit(self.centralwidget)
-        self.textEdit_3.setGeometry(QtCore.QRect(40, 130, 104, 40))
-        self.textEdit_3.setObjectName("textEdit_3")
         self.label_4 = QtWidgets.QLabel(self.centralwidget)
         self.label_4.setGeometry(QtCore.QRect(40, 110, 100, 13))
         self.label_4.setObjectName("label_4")
         self.label_5 = QtWidgets.QLabel(self.centralwidget)
         self.label_5.setGeometry(QtCore.QRect(40, 170, 100, 13))
         self.label_5.setObjectName("label_5")
-        self.textEdit_4 = QtWidgets.QTextEdit(self.centralwidget)
-        self.textEdit_4.setGeometry(QtCore.QRect(210, 290, 104, 40))
-        self.textEdit_4.setObjectName("textEdit_4")
         self.label_6 = QtWidgets.QLabel(self.centralwidget)
         self.label_6.setGeometry(QtCore.QRect(210, 270, 100, 13))
         self.label_6.setObjectName("label_6")
@@ -95,9 +92,30 @@ class Ui_MainWindow(Client):
         self.label_8 = QtWidgets.QLabel(self.centralwidget)
         self.label_8.setGeometry(QtCore.QRect(380, 210, 310, 40))
         self.label_8.setObjectName("label_8")
-        self.textEdit_logger = QtWidgets.QTextBrowser(self.centralwidget)
-        self.textEdit_logger.setGeometry(QtCore.QRect(40, 361, 641, 211))
-        self.textEdit_logger.setObjectName("textBrowser")
+
+        #buttons
+        self.pushButton_2 = QtWidgets.QPushButton(self.centralwidget)
+        self.pushButton_2.setGeometry(QtCore.QRect(40, 210, 111, 41))
+        self.pushButton_2.setObjectName("pushButton_2")
+        self.pushButton_3 = QtWidgets.QPushButton(self.centralwidget)
+        self.pushButton_3.setGeometry(QtCore.QRect(40, 290, 111, 41))
+        self.pushButton_3.setObjectName("pushButton_3")
+
+        #logger
+        self.logger_console = QtWidgets.QTextEdit(self.centralwidget)
+        self.logger_console.setGeometry(QtCore.QRect(40, 361, 641, 211))
+        self.logger_console.setObjectName("textBrowser")
+        self.logger_console.setStyleSheet(
+            """
+            QTextEdit {
+                background-color: #000;
+                color: #00ff00
+            }"""
+        )
+        sys.stdout.write = self.request_std(sys.stdout.write)
+        sys.stderr.write = self.request_std(sys.stderr.write)
+
+        #other
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 800, 21))
@@ -106,7 +124,6 @@ class Ui_MainWindow(Client):
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
         self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusBar(self.statusbar)
-
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
@@ -115,7 +132,9 @@ class Ui_MainWindow(Client):
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.label.setText(_translate("MainWindow", "IP address"))
         self.label_2.setText(_translate("MainWindow", "Port"))
-        self.label_3.setText(_translate("MainWindow", "Succesfull conection or error"))
+        self.label_3.setText(
+            _translate("MainWindow", "Succesfull conection or error")
+        )
         self.pushButton_2.setText(_translate("MainWindow", "Fast Request"))
         self.pushButton_3.setText(_translate("MainWindow", "Slow Request"))
         self.label_4.setText(_translate("MainWindow", "TimeOut"))
@@ -127,15 +146,19 @@ class Ui_MainWindow(Client):
         self.pushButton_2.clicked.connect(self.fast_request)
 
     def check_data_host_and_port(self):
-        text_host = self.textEdit.toPlainText()
+        """
+        Проверяет корректность введеных Ip и Port.
+        :return:
+        """
+        host = self.textEdit.toPlainText()
         text_port = self.textEdit_2.toPlainText()
-        if self.is_empty(text_host):
+        if self.is_empty(host):
             self.label_3.setText('Host is none')
             return
         if self.is_empty(text_port):
             self.label_3.setText('Port is None')
             return
-        if not self.check_ip(text_host):
+        if not self.check_ip(host):
             self.label_3.setText('Invalid IP')
             return
         if len(text_port) > 4:
@@ -146,7 +169,8 @@ class Ui_MainWindow(Client):
         except ValueError:
             self.label_3.setText('Port error')
             return
-        self.check_timeout()
+        self.make_request(host, port)
+        #       self.check_timeout()
 
     def check_timeout(self):
         timeout = self.textEdit_3.toPlainText()
@@ -188,20 +212,19 @@ class Ui_MainWindow(Client):
             print(error)
 
     def fast_request(self) -> None:
-        self.logger.info('fast request')
-        self.textEdit_logger.insertPlainText(
+        logging.info('fast request')
+        self.logger_console.insertPlainText(
             '!'
         )
         if not self.check_data_host_and_port():
-            print('error')
+            return
         instance = tcp_connection_pb2.RequestForFastResponse()
         try:
             self.message.request_for_fast_response.CopyFrom(instance)
             self.tcpSocket.write(self.message.SerializeToString())
-            print(self.message)
             self.message.Clear()
         except Exception as error:
-            print(error)
+            return
 
     def make_request(self, host, port) -> None:
         try:
@@ -218,7 +241,6 @@ class Ui_MainWindow(Client):
                 return
             self.blockSize = instr.readUInt16()
         if self.tcpSocket.bytesAvailable() < self.blockSize:
-            #print(1)
             return
         self.message.ParseFromString(instr.readQString())
         if self.message.HasField('request_for_fast_response'):
@@ -236,45 +258,31 @@ class Ui_MainWindow(Client):
             return
         self.message.Clear()
 
-    def create_logger(self) -> None:
-        log = logging.getLogger('main')
-        log.setLevel(logging.DEBUG)
-        file_formatter = logging.Formatter(
-            ('#%(levelname)-s, %(pathname)s, line %(lineno)d, [%(asctime)s]: '
-             '%(message)s'), datefmt='%Y-%m-%d %H:%M:%S'
-        )
-        console_formatter = logging.Formatter(
-            (
-                '#%(levelname)-s, %(pathname)s, '
-                'line %(lineno)d: %(message)s'
-            )
-        )
-        log_window_formatter = logging.Formatter(
-            '#%(levelname)-s, %(message)s\n'
-        )
-        file_handler = logging.FileHandler('/logs')
-        file_handler.setLevel(logging.DEBUG)
-        file_handler.setFormatter(file_formatter)
-
-        console_handler = logging.StreamHandler()
-        console_handler.setFormatter(console_formatter)
-        console_handler.setLevel(logging.DEBUG)
-        console_handler.setFormatter(console_formatter)
-
-        log_window_handler = logging.Handler()
-        log_window_handler.emit = lambda record: self.textEdit_logger.insertPlainText(
-            log_window_handler.format(record)
-        )
-        log_window_handler.setLevel(logging.DEBUG)
-        log_window_handler.setFormatter(log_window_formatter)
+    def request_std(self, func):
+        def inner(inputStr):
+            cursor = QTextCursor(self.logger_console.document())
+            cursor.setPosition(0)
+            self.logger_console.setTextCursor(cursor)
+            self.logger_console.insertPlainText(inputStr)
+            return func(inputStr)
+        return inner
 
 
 if __name__ == "__main__":
     import sys
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(CustomLogFormatter())
+    stream_handler.setLevel(logging.DEBUG)
+    logger.addHandler(stream_handler)
+    logger = logging.getLogger("* TCP_client *")
+
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
     ui = Ui_MainWindow()
     ui.setupUi(MainWindow)
-    logging.error('a')
     MainWindow.show()
-    sys.exit(app.exec_())
+    logging.info('Started client')
+
+    sys.exit(app.exec())
