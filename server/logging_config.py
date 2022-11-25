@@ -14,7 +14,7 @@ def configure_logging():
         level=logging.INFO,
         handlers=(
             RotatingFileHandler(
-                LOG_DIR / 'parser_logs.log',
+                LOG_DIR / 'tcp_asyncio_server_logs.log',
                 maxBytes=10 ** 6,
                 backupCount=5
             ),

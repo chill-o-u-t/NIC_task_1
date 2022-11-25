@@ -3,10 +3,21 @@ import logging
 import os
 
 import tcp_connection_pb2
-from server.exceptions import SomeException
+
 from utils import time_now
-HOST = os.getenv('SERVER_IP')
-PORT = os.getenv('DEFAULT_PORT')
+
+DEBUG = True
+
+if DEBUG:
+    HOST = 'localhost'
+    PORT = 9999
+else:
+    HOST = os.getenv('SERVER_IP')
+    PORT = os.getenv('DEFAULT_PORT')
+
+
+def check_all():
+    return all([HOST, PORT])
 
 
 class EchoServer(object):
@@ -64,5 +75,9 @@ class EchoServer(object):
 
 
 if __name__ == '__main__':
+    from logging_config import configure_logging
+    configure_logging()
+    if not check_all():
+        logging.critical('Started failed: empy host or port')
     server = EchoServer()
     server.start_server()

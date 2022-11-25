@@ -1,21 +1,13 @@
 import logging
 import re
-
-from PyQt5 import QtCore, QtWidgets
+from PyQt6 import QtCore, QtWidgets
 
 import tcp_connection_pb2
 from user.constants import TIMEOUT
 
-TEXT = "MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" color:#00aa00;\">logs </span></p></body></html>"
-
-
-from PyQt5.QtCore import QDataStream, QIODevice
-from PyQt5.QtWidgets import QDialog
-from PyQt5.QtNetwork import QTcpSocket, QAbstractSocket
+from PyQt6.QtCore import QDataStream, QIODevice
+from PyQt6.QtNetwork import QTcpSocket, QAbstractSocket
+from PyQt6.QtWidgets import QDialog
 
 
 class Client(QDialog):
@@ -27,6 +19,32 @@ class Client(QDialog):
         self.tcpSocket = QTcpSocket(self)
         self.tcpSocket.readyRead.connect(self.deal_communication)
         self.logger = logging.getLogger('main')
+
+    @staticmethod
+    def is_empty(object):
+        """
+        Проверка объекта на наличие данных,
+        если объект пуст или равен 0 возвращает False.
+        :param object:
+        :return:
+        """
+        return object == 0 or object == ''
+
+    @staticmethod
+    def check_ip(ip):
+        """
+        Проверка введенного ip адреса на соответствие формату.
+        :param ip:
+        :return:
+        """
+        if re.match(
+            '\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', ip
+        ) is None:
+            return False
+        for block in map(int,  ip.split('.')):
+            if block > 255:
+                return False
+        return True
 
 
 class Ui_MainWindow(Client):
@@ -103,60 +121,59 @@ class Ui_MainWindow(Client):
         self.label_4.setText(_translate("MainWindow", "TimeOut"))
         self.label_5.setText(_translate("MainWindow", "Default TimeOut: 1"))
         self.label_6.setText(_translate("MainWindow", "Delay"))
-        self.label_7.setText(_translate("MainWindow", "output slow /////////////////////////////////////////////////////////////"))
-        self.label_8.setText(_translate("MainWindow", "output fast /////////////////////////////////////////////////////////////"))
+        self.label_7.setText(_translate("MainWindow", "output here"))
+        self.label_8.setText(_translate("MainWindow", "output here"))
         self.pushButton_3.clicked.connect(self.slow_request)
         self.pushButton_2.clicked.connect(self.fast_request)
 
     def check_data_host_and_port(self):
         text_host = self.textEdit.toPlainText()
         text_port = self.textEdit_2.toPlainText()
-        if text_host == '':
+        if self.is_empty(text_host):
             self.label_3.setText('Host is none')
             return
-        if text_port == '':
+        if self.is_empty(text_port):
             self.label_3.setText('Port is None')
             return
-        if re.match(
-            '\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', text_host
-        ) is None:
+        if not self.check_ip(text_host):
             self.label_3.setText('Invalid IP')
             return
-        for block in map(int,  text_host.split('.')):
-            if block > 255:
-                self.label_3.setText('Invalid IP')
-                return
         if len(text_port) > 4:
-            self.label_3.setText('Port error')
+            self.label_3.setText('Invalid Port')
             return
         try:
             port = int(text_port)
         except ValueError:
             self.label_3.setText('Port error')
             return
+        self.check_timeout()
+
+    def check_timeout(self):
+        timeout = self.textEdit_3.toPlainText()
         try:
-            if int(self.textEdit_3.toPlainText()) in TIMEOUT:
-                self.time_out = int(self.textEdit_3.toPlainText())
-        except Exception:
-            logging.info('Set default timeout 1 second')
-        self.make_request('localhost', port)
-        self.label_3.setText('Successful connection')
-        return True
+            timeout_digit = int(timeout)
+        except ValueError:
+            logging.info('Timeout is empty or wrong')
+        if timeout_digit in TIMEOUT:
+            self.time_out = int(self.textEdit_3.toPlainText())
+            return
+        logging.info('Timeout is empty, default is 1')
+        return
 
     def check_delay(self):
         delay_text = self.textEdit_4.toPlainText()
-        if delay_text == '':
+        if self.is_empty(delay_text):
             delay = 10
         else:
             delay = int(delay_text)
         if delay < 10 or delay > 1000:
-            # logging
-            return
+            logging.error('Задержка не может превыщать 1000 мс или быть меньшше 10 мс')
+            return 1
         return delay // 10
 
     def slow_request(self):
         if not self.check_data_host_and_port():
-            print('error')
+            print('error') # vremenno
             return
         instance = tcp_connection_pb2.RequestForSlowResponse()
         try:
@@ -165,7 +182,9 @@ class Ui_MainWindow(Client):
             self.tcpSocket.write(self.message.SerializeToString())
             print(self.message)
             self.message.Clear()
+            logging.info('Successfully sending data')
         except Exception as error:
+            logging.error(f'Data sending failed: {error}')
             print(error)
 
     def fast_request(self) -> None:
@@ -185,8 +204,11 @@ class Ui_MainWindow(Client):
             print(error)
 
     def make_request(self, host, port) -> None:
-        print(f'{host}:{port}')
-        self.tcpSocket.connectToHost(host, port, QIODevice.ReadWrite)
+        try:
+            self.tcpSocket.connectToHost(host, port, QIODevice.ReadWrite)
+            logging.info(f'Successful connection: {host}:{port}')
+        except Exception as error:
+            logging.error(f'Connection failed: {error}')
 
     def deal_communication(self) -> None:
         instr = QDataStream(self.tcpSocket)
