@@ -21,14 +21,14 @@ class Client(QDialog):
         self.tcp_socket.readyRead.connect(self.deal_communication)
 
     @staticmethod
-    def is_empty(object):
+    def is_empty(data):
         """
         Проверка объекта на наличие данных,
         если объект пуст или равен 0 возвращает False.
-        :param object:
+        :param data:
         :return:
         """
-        return object == 0 or object == ''
+        return data == 0 or data == ''
 
     @staticmethod
     def check_ip(ip):
@@ -52,7 +52,7 @@ class UiMainWindow(Client):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(800, 600)
         self.central_widget = QtWidgets.QWidget(MainWindow)
-        self.central_widget.setObjectName("centralwidget")
+        self.central_widget.setObjectName("central-widget")
 
         # text_edits
         self.text_edit_host = QtWidgets.QTextEdit(self.central_widget)
@@ -118,7 +118,7 @@ class UiMainWindow(Client):
         sys.stdout.write = self.request_std(sys.stdout.write)
         sys.stderr.write = self.request_std(sys.stderr.write)
 
-        #other
+        # other
         MainWindow.setCentralWidget(self.central_widget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 800, 21))
@@ -131,13 +131,13 @@ class UiMainWindow(Client):
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
         logging.info('Interface created')
 
-    def retranslate_ui(self, MainWindow):
+    def retranslate_ui(self, main_window):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        main_window.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.label_ip.setText(_translate("MainWindow", "IP address"))
         self.label_port.setText(_translate("MainWindow", "Port"))
         self.label_connected_status.setText(
-            _translate("MainWindow", "Succesfull conection or error")
+            _translate("MainWindow", "Successfully connection or error")
         )
         self.pushButton_2.setText(_translate("MainWindow", "Fast Request"))
         self.pushButton_3.setText(_translate("MainWindow", "Slow Request"))
@@ -195,6 +195,7 @@ class UiMainWindow(Client):
             timeout_digit = int(timeout)
         except ValueError:
             logging.info('Timeout is empty or wrong')
+            return  
         if timeout_digit in TIMEOUT:
             self.time_out = int(self.text_edit_timeout.toPlainText())
             return

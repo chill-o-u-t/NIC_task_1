@@ -37,6 +37,7 @@ class EchoServer(object):
                 data = await reader.read(1024)
             except Exception as error:
                 logging.error(f'Failed received message: {error}')
+                return
             logging.info('Message received successfully')
             self.message.ParseFromString(data)
             address, port = writer.get_extra_info('peername')
