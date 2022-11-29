@@ -1,86 +1,116 @@
+import os
+import logging
 from twisted.internet import protocol, reactor
 from twisted.internet.protocol import connectionDone
 from twisted.internet.endpoints import TCP4ServerEndpoint
 from twisted.internet.defer import Deferred
-# TCP4ServerEndpoint требуется win32api
-from datetime import datetime
+
 import tcp_connection_pb2
+from utils import time_now
 
-message = tcp_connection_pb2.WrapperMessage()
+
+DEBUG = True
+
+if DEBUG:
+    HOST = 'localhost'
+    PORT = 9999
+else:
+    HOST = os.getenv('SERVER_IP')
+    PORT = os.getenv('DEFAULT_PORT')
 
 
-# 2, определить класс протокола на стороне сервера
+def check_all():
+    return all([HOST, PORT])
+
+
 class TSServerProtocol(protocol.Protocol):
     """
-     Протокол на стороне сервера
-     Каждое клиентское соединение соответствует экземпляру.
+     Server side protocol
+     Each client connection corresponds to an instance.
     """
 
     def __init__(self, users):
         self.users = users
-        self.clientInfo = ""  # clientInfo сохранит информацию о клиентском соединении.
+        self.message = tcp_connection_pb2.WrapperMessage()
+        self._buffer = b""
+        self.clientInfo = ""
 
     def connectionMade(self):
-        # TODO: логи в файл
         self.clientInfo = self.transport.getPeer()
         self.users.append(self)
-        print("Соединение с% s" % (self.clientInfo))
+        logging.info(f'Successful connection with {self.clientInfo.host}:{self.clientInfo.port}')
 
     def dataReceived(self, data):
-        message.ParseFromString(data)
-        print(message)
-
-        if message.HasField('request_for_fast_response'):
-            self.fast_response()
-            # отвечать на  RequestForFastResponse сообщением  FastResponse
-            # с текущем временем на машине сервера
-        elif message.HasField('request_for_slow_response'):
-            self.slow_response(message)
-        else:
-            # тут будет ошибка
-            print("что-то плохо мне")
-        message.Clear()
-
-    def slow_response(self, data):
-        client_count = len(self.users)
-        delay = data.request_for_slow_response.time_in_seconds_to_sleep
-        instance = tcp_connection_pb2.SlowResponse()
-        instance.connected_client_count = client_count
-
-        msg = tcp_connection_pb2.WrapperMessage()
-        msg.slow_response.CopyFrom(instance)
-        # sleep
-        deferred = Deferred()
-        deferred.addCallback(self.send_message)
-        reactor.callLater(delay, deferred.callback, msg)
+        self._buffer += data
+        self.message.Clear()
+        try:
+            self.message.ParseFromString(self._buffer)
+            logging.info('Message received successfully')
+            logging.info(f'Message received from {self.clientInfo.host}:{self.clientInfo.port}')
+            if self.message.HasField('request_for_fast_response'):
+                self.fast_response()
+                self._buffer = b""
+                return
+            if self.message.HasField('request_for_slow_response'):
+                self.slow_response()
+                self._buffer = b""
+                return
+            if len(self._buffer) >= 1024:
+                logging.error(
+                    f'Receive message buffer full:{len(self._buffer)}, {self._buffer}'
+                )
+                self._buffer = b""
+                return
+            logging.error(
+                f'Only part of the message was delivered: {self.message}, {self._buffer}'
+            )
+            return
+        except Exception as error:
+            # DATA_RECIEVED_ERROR в другом файле - константа
+            # print(DATA_RECIEVED_ERROR.format(e))
+            pass
 
     def fast_response(self):
-        time_now = datetime.now().strftime("%Y%m%dT%H%M%S.%f")
-        message.fast_response.current_date_time = time_now
-        self.send_message(message)
-        message.Clear()
+        self.message.Clear()
+        self.message.fast_response.current_date_time = time_now()
+        self.send_message(self.message)
 
-    def send_message(self, msg):
-        self.transport.write(msg.SerializeToString())  # utf-8??
+    def slow_response(self):
+        client_count = len(self.users)
+        delay = self.message.request_for_slow_response.time_in_seconds_to_sleep
+        self.message.Clear()
+        self.message.slow_response.connected_client_count = client_count
+        deferred = Deferred()
+        deferred.addCallback(self.send_message)
+        reactor.callLater(delay, deferred.callback, self.message)
+
+    def send_message(self, message):
+        self.transport.write(message.SerializeToString())
+        logging.info(f'Message successfully sent')
 
     def connectionLost(self, reason=connectionDone):
-        # TODO: логи
-        print('Delete user from server')
+        logging.info('Delete user from server')
         self.users.remove(self)
 
 
-# 3. Определите класс фабрики на стороне сервера
 class TSServerFactory(protocol.Factory):
+    """
+    Factory for instantiating the protocol on the server side
+    """
+
     def __init__(self):
         self.users = []
+        logging.info(f'Server started on {HOST}:{PORT}')
 
     def buildProtocol(self, addr):
         return TSServerProtocol(self.users)
 
 
-# 4, используйте реактор для запуска мониторинга порта
 if __name__ == '__main__':
-    PORT = 8000  # TODO: читываем из файла
+    from logging_config import configure_logging
+    configure_logging()
+    if not check_all():
+        logging.critical('Started failed: empty host or port')
     endpoint = TCP4ServerEndpoint(reactor, PORT)
     endpoint.listen(TSServerFactory())
     reactor.run()
