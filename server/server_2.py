@@ -32,14 +32,16 @@ class EchoServer(object):
         writer: asyncio.StreamWriter,
         users={}
     ):
+        self._buffer = b""
         while not reader.at_eof():
             try:
                 data = await reader.read(1024)
+                self._buffer += data
             except Exception as error:
                 logging.error(f'Failed received message: {error}')
                 return
             logging.info('Message received successfully')
-            self.message.ParseFromString(data)
+            self.message.ParseFromString(self._buffer)
             address, port = writer.get_extra_info('peername')
             logging.info(f'Message received from {address}:{port}')
             users[f'{address}:{port}'] = 1
@@ -66,6 +68,7 @@ class EchoServer(object):
                     logging.info(f'Message successfully sent')
                     self.message.Clear
                 users[f'{address}:{port}'] = 0
+                self._buffer = b""
             except Exception as error:
                 logging.error(f'Failed sending sata: {error}')
 

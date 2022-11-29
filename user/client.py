@@ -1,5 +1,6 @@
 import logging
 import re
+
 from PyQt6 import QtCore, QtWidgets
 from PyQt6.QtGui import QTextCursor
 from PyQt6.QtCore import QDataStream, QIODevice
