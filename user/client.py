@@ -98,12 +98,12 @@ class UiMainWindow(Client):
         self.label_output_slow.setObjectName("label_8")
 
         # buttons
-        self.pushButton_2 = QtWidgets.QPushButton(self.central_widget)
-        self.pushButton_2.setGeometry(QtCore.QRect(40, 210, 111, 41))
-        self.pushButton_2.setObjectName("pushButton_2")
-        self.pushButton_3 = QtWidgets.QPushButton(self.central_widget)
-        self.pushButton_3.setGeometry(QtCore.QRect(40, 290, 111, 41))
-        self.pushButton_3.setObjectName("pushButton_3")
+        self.push_button_fast = QtWidgets.QPushButton(self.central_widget)
+        self.push_button_fast.setGeometry(QtCore.QRect(40, 210, 111, 41))
+        self.push_button_fast.setObjectName("pushButton_2")
+        self.push_button_slow = QtWidgets.QPushButton(self.central_widget)
+        self.push_button_slow.setGeometry(QtCore.QRect(40, 290, 111, 41))
+        self.push_button_slow.setObjectName("pushButton_3")
 
         # logger
         self.logger_console = QtWidgets.QTextEdit(self.central_widget)
@@ -140,8 +140,8 @@ class UiMainWindow(Client):
         self.label_connected_status.setText(
             _translate("MainWindow", "Successfully connection or error")
         )
-        self.pushButton_2.setText(_translate("MainWindow", "Fast Request"))
-        self.pushButton_3.setText(_translate("MainWindow", "Slow Request"))
+        self.push_button_fast.setText(_translate("MainWindow", "Fast Request"))
+        self.push_button_slow.setText(_translate("MainWindow", "Slow Request"))
         self.label_timeout.setText(_translate("MainWindow", "TimeOut"))
         self.label_default_timeout.setText(
             _translate("MainWindow", "Default TimeOut: 1")
@@ -153,10 +153,24 @@ class UiMainWindow(Client):
         self.label_output_slow.setText(
             _translate("MainWindow", "output here")
         )
-        self.pushButton_3.clicked.connect(self.slow_request)
-        self.pushButton_2.clicked.connect(self.fast_request)
+        self.push_button_slow.clicked.connect(self.slow_request)
+        self.push_button_fast.clicked.connect(self.fast_request)
 
-    def check_data_host_and_port(self):
+    def check_timeout(self) -> None:
+        timeout = self.text_edit_timeout.toPlainText()
+        try:
+            timeout_digit = int(timeout)
+        except ValueError:
+            logging.info('Timeout is empty or wrong')
+            return
+        if timeout_digit in TIMEOUT:
+            self.time_out = int(self.text_edit_timeout.toPlainText())
+            logging.info(f'Timeout set at {self.time_out} seconds.')
+            return
+        logging.info('Timeout is empty, set default as 1')
+        return
+
+    def check_data_host_and_port(self) -> None:
         """
         Проверяет корректность введеных Ip и Port.
         :return:
@@ -188,22 +202,8 @@ class UiMainWindow(Client):
             logging.error('Can`t convert string port to int')
             return
         self.make_request(host, port)
-        #       self.check_timeout()
 
-    def check_timeout(self):
-        timeout = self.text_edit_timeout.toPlainText()
-        try:
-            timeout_digit = int(timeout)
-        except ValueError:
-            logging.info('Timeout is empty or wrong')
-            return
-        if timeout_digit in TIMEOUT:
-            self.time_out = int(self.text_edit_timeout.toPlainText())
-            return
-        logging.info('Timeout is empty, default is 1')
-        return
-
-    def check_delay(self):
+    def check_delay(self) -> int:
         delay_text = self.text_edit_delay.toPlainText()
         if self.is_empty(delay_text):
             delay = 10
@@ -215,7 +215,7 @@ class UiMainWindow(Client):
         logging.info(f'Delay set at {delay // 10} sec.')
         return delay // 10
 
-    def slow_request(self):
+    def slow_request(self) -> None:
         if not self.check_data_host_and_port():
             return
         instance = tcp_connection_pb2.RequestForSlowResponse()
@@ -227,7 +227,6 @@ class UiMainWindow(Client):
             logging.info('Slow request message is sending now')
         except Exception as error:
             logging.error(f'Data sending failed: {error}')
-            print(error)
 
     def fast_request(self) -> None:
         if not self.check_data_host_and_port():
@@ -242,6 +241,7 @@ class UiMainWindow(Client):
             logging.error(f'Data sending failed: {error}')
 
     def make_request(self, host, port) -> None:
+        self.check_timeout()
         try:
             self.tcp_socket.connectToHost(host, port, QIODevice.ReadWrite)
             logging.info(f'Successful connection: {host}:{port}')
