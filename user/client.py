@@ -3,9 +3,10 @@ import re
 
 from PyQt6 import QtCore, QtWidgets
 from PyQt6.QtGui import QTextCursor
-from PyQt6.QtCore import QDataStream, QIODevice
+from PyQt6.QtCore import QDataStream
 from PyQt6.QtNetwork import QTcpSocket
 from PyQt6.QtWidgets import QDialog
+from google.protobuf.internal.decoder import _DecodeVarint32
 
 import tcp_connection_pb2
 from user.constants import TIMEOUT
@@ -38,6 +39,8 @@ class Client(QDialog):
         :param ip:
         :return:
         """
+        if ip == 'localhost':
+            return True
         if re.match(
             '\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', ip
         ) is None:
@@ -96,6 +99,9 @@ class UiMainWindow(Client):
         self.label_output_slow = QtWidgets.QLabel(self.central_widget)
         self.label_output_slow.setGeometry(QtCore.QRect(380, 210, 310, 40))
         self.label_output_slow.setObjectName("label_8")
+        self.label_status = QtWidgets.QLabel(self.central_widget)
+        self.label_status.setGeometry(QtCore.QRect(210, 100, 100, 13))
+        self.label_status.setObjectName("status")
 
         # buttons
         self.push_button_fast = QtWidgets.QPushButton(self.central_widget)
@@ -120,6 +126,9 @@ class UiMainWindow(Client):
         sys.stderr.write = self.request_std(sys.stderr.write)
 
         # other
+        self.checkbox = QtWidgets.QCheckBox(main_window)
+        self.checkbox.setGeometry(QtCore.QRect(500, 50, 1111, 41))
+        self.checkbox.setObjectName('connection')
         main_window.setCentralWidget(self.central_widget)
         self.menubar = QtWidgets.QMenuBar(main_window)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 800, 21))
@@ -155,6 +164,7 @@ class UiMainWindow(Client):
         )
         self.push_button_slow.clicked.connect(self.slow_request)
         self.push_button_fast.clicked.connect(self.fast_request)
+        self.checkbox.clicked.connect(self.check_data_host_and_port)
 
     def check_timeout(self) -> None:
         timeout = self.text_edit_timeout.toPlainText()
@@ -178,18 +188,22 @@ class UiMainWindow(Client):
         host = self.text_edit_host.toPlainText()
         text_port = self.text_edit_port.toPlainText()
         if self.is_empty(host):
+            self.checkbox.setChecked(False)
             self.label_connected_status.setText('Host is none')
             logging.error('Host is empty')
             return
         if self.is_empty(text_port):
+            self.checkbox.setChecked(False)
             self.label_connected_status.setText('Port is None')
             logging.error('Port is empty')
             return
         if not self.check_ip(host):
+            self.checkbox.setChecked(False)
             self.label_connected_status.setText('Invalid IP')
             logging.error(f'Introduced ip is wrong: {host}')
             return
         if len(text_port) > 4:
+            self.checkbox.setChecked(False)
             self.label_connected_status.setText('Invalid Port')
             logging.error(
                 f'Len of port ({len(text_port)}) more then max port len'
@@ -216,7 +230,7 @@ class UiMainWindow(Client):
         return delay // 10
 
     def slow_request(self) -> None:
-        if not self.check_data_host_and_port():
+        if not self.checkbox.isChecked():
             return
         instance = tcp_connection_pb2.RequestForSlowResponse()
         try:
@@ -229,7 +243,7 @@ class UiMainWindow(Client):
             logging.error(f'Data sending failed: {error}')
 
     def fast_request(self) -> None:
-        if not self.check_data_host_and_port():
+        if not self.checkbox.isChecked():
             return
         instance = tcp_connection_pb2.RequestForFastResponse()
         try:
@@ -243,21 +257,28 @@ class UiMainWindow(Client):
     def make_request(self, host, port) -> None:
         self.check_timeout()
         try:
-            self.tcp_socket.connectToHost(host, port, QIODevice.ReadWrite)
+            self.tcp_socket.connectToHost(host, port)
             logging.info(f'Successful connection: {host}:{port}')
+            self.label_status.setText(f'{host}:{port}')
         except Exception as error:
             logging.error(f'Connection failed: {error}')
 
     def deal_communication(self) -> None:
+        from pyvarint import varint
         instr = QDataStream(self.tcp_socket)
-        instr.setVersion(QDataStream.Qt_5_0)
-        if self.blockSize == 0:
+        instr.setVersion(QDataStream.Version.Qt_5_0)
+        data = instr.readUInt32()
+        data_bytes = varint.encode(data)
+        print(data_bytes)
+        print(len(data_bytes))
+        self.message.ParseFromString(data_bytes)
+        """if self.blockSize == 0:
             if self.tcp_socket.bytesAvailable() < 2:
                 return
             self.blockSize = instr.readUInt16()
         if self.tcp_socket.bytesAvailable() < self.blockSize:
-            return
-        self.message.ParseFromString(instr.readQString())
+            return"""
+        #self.message.ParseFromString(instr.readQString())
         if self.message.HasField('request_for_fast_response'):
             self.label_output_fast.setText(
                 self.message.fast_response.current_date_time
