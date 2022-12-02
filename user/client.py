@@ -16,7 +16,7 @@ from logger_config import CustomLogFormatter
 class Client(QDialog):
     def __init__(self):
         super().__init__()
-        self.blockSize = 0
+        self._buffer = b''
         self.message = tcp_connection_pb2.WrapperMessage()
         self.time_out = 1000
         self.tcp_socket = QTcpSocket(self)
@@ -93,12 +93,22 @@ class UiMainWindow(Client):
         self.label_delay = QtWidgets.QLabel(self.central_widget)
         self.label_delay.setGeometry(QtCore.QRect(210, 270, 100, 13))
         self.label_delay.setObjectName("label_6")
-        self.label_output_fast = QtWidgets.QLabel(self.central_widget)
-        self.label_output_fast.setGeometry(QtCore.QRect(380, 290, 310, 40))
-        self.label_output_fast.setObjectName("label_7")
+
+        # outputs
         self.label_output_slow = QtWidgets.QLabel(self.central_widget)
-        self.label_output_slow.setGeometry(QtCore.QRect(380, 210, 310, 40))
-        self.label_output_slow.setObjectName("label_8")
+        self.label_output_slow.setGeometry(QtCore.QRect(380, 290, 310, 40))
+        self.label_output_slow.setObjectName("label_7")
+        self.label_output_fast = QtWidgets.QLabel(self.central_widget)
+        self.label_output_fast.setGeometry(QtCore.QRect(380, 210, 310, 40))
+        self.label_output_fast.setObjectName("label_8")
+        self.label_output_fast_msg = QtWidgets.QLabel(self.central_widget)
+        self.label_output_fast_msg.setGeometry(QtCore.QRect(470, 210, 310, 40))
+        self.label_output_fast_msg.setObjectName("label_9")
+        self.label_output_slow_msg = QtWidgets.QLabel(self.central_widget)
+        self.label_output_slow_msg.setGeometry(QtCore.QRect(470, 290, 310, 40))
+        self.label_output_slow_msg.setObjectName("label_10")
+
+        # status
         self.label_status = QtWidgets.QLabel(self.central_widget)
         self.label_status.setGeometry(QtCore.QRect(210, 100, 100, 13))
         self.label_status.setObjectName("status")
@@ -264,35 +274,27 @@ class UiMainWindow(Client):
             logging.error(f'Connection failed: {error}')
 
     def deal_communication(self) -> None:
-        from pyvarint import varint
-        instr = QDataStream(self.tcp_socket)
-        instr.setVersion(QDataStream.Version.Qt_5_0)
-        data = instr.readUInt32()
-        data_bytes = varint.encode(data)
-        print(data_bytes)
-        print(len(data_bytes))
-        self.message.ParseFromString(data_bytes)
-        """if self.blockSize == 0:
-            if self.tcp_socket.bytesAvailable() < 2:
-                return
-            self.blockSize = instr.readUInt16()
-        if self.tcp_socket.bytesAvailable() < self.blockSize:
-            return"""
-        #self.message.ParseFromString(instr.readQString())
-        if self.message.HasField('request_for_fast_response'):
-            self.label_output_fast.setText(
+        self._buffer += bytes(self.tcp_socket.readAll())
+        #(message_size, position) = _DecodeVarint32(self._buffer, 0)
+        #print(message_size, position)
+        #current_message = self._buffer[position::position+1]
+        self.message.ParseFromString(self._buffer)
+        if self.message.HasField('fast_response'):
+            self.label_output_fast_msg.setText(
                 self.message.fast_response.current_date_time
             )
-        elif self.message.HasField('request_for_slow_response'):
-            self.label_output_slow.setText(
-                self.message.slow_response.connected_client_count
+        elif self.message.HasField('slow_response'):
+            print(1)
+            self.label_output_slow_msg.setText(
+                f'{self.message.slow_response.connected_client_count}'
             )
             logging.info('Successful data received')
         else:
-            logging.error('')
+            logging.error(self.message.slow_response.connected_client_count)
             self.message.Clear()
             return
         self.message.Clear()
+        self._buffer = b''
 
     def request_std(self, func):
         def inner(inputStr):
