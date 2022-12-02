@@ -1,12 +1,13 @@
 import os
 import logging
+
 from twisted.internet import protocol, reactor
 from twisted.internet.protocol import connectionDone
 from twisted.internet.endpoints import TCP4ServerEndpoint
 from twisted.internet.defer import Deferred
 
 import tcp_connection_pb2
-from utils import time_now
+from server_python_twisted.utils import time_now
 
 
 DEBUG = True
@@ -38,7 +39,10 @@ class TSServerProtocol(protocol.Protocol):
     def connectionMade(self):
         self.clientInfo = self.transport.getPeer()
         self.users.append(self)
-        logging.info(f'Successful connection with {self.clientInfo.host}:{self.clientInfo.port}')
+        logging.info(
+            f'Successful connection with '
+            f'{self.clientInfo.host}:{self.clientInfo.port}'
+        )
 
     def dataReceived(self, data):
         self._buffer += data
@@ -46,7 +50,10 @@ class TSServerProtocol(protocol.Protocol):
         try:
             self.message.ParseFromString(self._buffer)
             logging.info('Message received successfully')
-            logging.info(f'Message received from {self.clientInfo.host}:{self.clientInfo.port}')
+            logging.info(
+                f'Message received from '
+                f'{self.clientInfo.host}:{self.clientInfo.port}'
+            )
             if self.message.HasField('request_for_fast_response'):
                 self.fast_response()
                 self._buffer = b""
@@ -57,12 +64,14 @@ class TSServerProtocol(protocol.Protocol):
                 return
             if len(self._buffer) >= 1024:
                 logging.error(
-                    f'Receive message buffer full:{len(self._buffer)}, {self._buffer}'
+                    f'Receive message buffer full:'
+                    f'{len(self._buffer)}, {self._buffer}'
                 )
                 self._buffer = b""
                 return
             logging.error(
-                f'Only part of the message was delivered: {self.message}, {self._buffer}'
+                f'Only part of the message was delivered: '
+                f'{self.message}, {self._buffer}'
             )
             return
         except Exception as error:
@@ -89,13 +98,13 @@ class TSServerProtocol(protocol.Protocol):
         logging.info(f'Message successfully sent')
 
     def connectionLost(self, reason=connectionDone):
-        logging.info('Delete user from server')
+        logging.info('Delete user from server_python_twisted')
         self.users.remove(self)
 
 
 class TSServerFactory(protocol.Factory):
     """
-    Factory for instantiating the protocol on the server side
+    Factory for instantiating the protocol on the server_python_twisted side
     """
 
     def __init__(self):
@@ -107,7 +116,7 @@ class TSServerFactory(protocol.Factory):
 
 
 if __name__ == '__main__':
-    from logging_config import configure_logging
+    import configure_logging
     configure_logging()
     if not check_all():
         logging.critical('Started failed: empty host or port')
