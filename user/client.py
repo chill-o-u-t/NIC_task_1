@@ -3,13 +3,12 @@ import re
 
 from PyQt6 import QtCore, QtWidgets
 from PyQt6.QtGui import QTextCursor
-from PyQt6.QtCore import QDataStream
 from PyQt6.QtNetwork import QTcpSocket
 from PyQt6.QtWidgets import QDialog
 from google.protobuf.internal.decoder import _DecodeVarint32
 
 import tcp_connection_pb2
-from user.constants import TIMEOUT
+from user.constants import *
 from logger_config import CustomLogFormatter
 
 
@@ -197,13 +196,13 @@ class UiMainWindow(Client):
         try:
             timeout_digit = int(timeout)
         except ValueError:
-            logging.info('Timeout is empty or wrong')
+            logging.info(TIMEOUT_ERROR_TO_INT)
             return
         if timeout_digit in TIMEOUT:
             self.time_out = int(self.text_edit_timeout.toPlainText())
-            logging.info(f'Timeout set at {self.time_out} seconds.')
+            logging.info(TIME_SET_BY_USER.format(timeout=self.time_out))
             return
-        logging.info('Timeout is wrong or empty, set default as 1')
+        logging.info(TIMEOUT_SET_DEFAULT)
         return
 
     def check_data_host_and_port(self) -> None:
@@ -222,31 +221,32 @@ class UiMainWindow(Client):
         if self.is_empty(host):
             self.checkbox.setChecked(False)
             self.label_connected_status.setText('Host is none')
-            logging.error('Host is empty')
+            logging.error(HOST_EMPTY)
             return
         if self.is_empty(text_port):
             self.checkbox.setChecked(False)
             self.label_connected_status.setText('Port is None')
-            logging.error('Port is empty')
+            logging.error(PORT_EMPTY)
             return
         if not self.check_ip(host):
             self.checkbox.setChecked(False)
             self.label_connected_status.setText('Invalid IP')
-            logging.error(f'Introduced ip is wrong: {host}')
+            logging.error(WRONG_HOST.format(host=host))
             return
         if len(text_port) > 4:
             self.checkbox.setChecked(False)
             self.label_connected_status.setText('Invalid Port')
             logging.error(
-                f'Len of port ({len(text_port)}) more then max port len'
+                WRONG_PORT_LEN.format(len=len(text_port))
             )
             return
         try:
             port = int(text_port)
         except ValueError:
             self.label_connected_status.setText('Port error')
-            logging.error('Can`t convert string port to int')
+            logging.error(WRONG_PORT)
             return
+        self.label_connected_status.setText('Connected')
         self.make_request(host, port)
 
     def check_delay(self) -> int:
@@ -261,9 +261,9 @@ class UiMainWindow(Client):
         else:
             delay = int(delay_text)
         if delay < 10 or delay > 1000:
-            logging.error('Can`t set delay more 1000 or less 10')
+            logging.error(DELAY_ERROR)
             return 1
-        logging.info(f'Delay set at {delay // 10} sec.')
+        logging.info(DELAY_IS_OK.format(delay=(delay // 10)))
         return delay // 10
 
     def slow_request(self) -> None:
@@ -275,9 +275,9 @@ class UiMainWindow(Client):
             self.message.request_for_slow_response.CopyFrom(instance)
             self.tcp_socket.write(self.message.SerializeToString())
             self.message.Clear()
-            logging.info('Slow request message is sending now')
+            logging.info(SEND_SLOW_MESSAGE)
         except Exception as error:
-            logging.error(f'Data sending failed: {error}')
+            logging.error(ERROR_DATA_MESSAGE.format(error=error))
 
     def fast_request(self) -> None:
         if not self.checkbox.isChecked():
@@ -286,42 +286,42 @@ class UiMainWindow(Client):
         try:
             self.message.request_for_fast_response.CopyFrom(instance)
             self.tcp_socket.write(self.message.SerializeToString())
-            logging.info('Fast request message is sending now')
+            logging.info(SEND_FAST_MESSAGE)
             self.message.Clear()
         except Exception as error:
-            logging.error(f'Data sending failed: {error}')
+            logging.error(ERROR_DATA_MESSAGE.format(error=error))
 
     def make_request(self, host, port) -> None:
         self.check_timeout()
         try:
             self.tcp_socket.connectToHost(host, port)
-            logging.info(f'Successful connection: {host}:{port}')
+            logging.info(
+                CONNECTION_IS_OK.format(host=host, port=port)
+            )
             self.label_status.setText(f'{host}:{port}')
         except Exception as error:
-            logging.error(f'Connection failed: {error}')
+            logging.error(CONNECTION_FAILED)
 
     def deal_communication(self) -> None:
         self._buffer = bytes(self.tcp_socket.readAll())
         #(message_size, position) = _DecodeVarint32(self._buffer, 0)
-        #print(message_size, position)
-        #current_message = self._buffer[position::position+1]
         self.message.ParseFromString(self._buffer)
-        if self.message.HasField('fast_response'):
-            self.label_output_fast_msg.setText(
-                self.message.fast_response.current_date_time
-            )
-        elif self.message.HasField('slow_response'):
-            print(1)
-            self.label_output_slow_msg.setText(
-                f'{self.message.slow_response.connected_client_count}'
-            )
-            logging.info('Successful data received')
-        else:
-            logging.error('')
+        try:
+            if self.message.HasField('fast_response'):
+                self.label_output_fast_msg.setText(
+                    self.message.fast_response.current_date_time
+                )
+                logging.info(SUCCESSFULLY_RECEIVED)
+            if self.message.HasField('slow_response'):
+                self.label_output_slow_msg.setText(
+                    f'{self.message.slow_response.connected_client_count}'
+                )
+                logging.info(SUCCESSFULLY_RECEIVED)
+        except Exception as error:
+            logging.error(RECEIVED_DATA_ERROR.format(error=error))
+        finally:
             self.message.Clear()
-            return
-        self.message.Clear()
-        self._buffer = b''
+            self._buffer = b''
 
     def request_std(self, func):
         """
