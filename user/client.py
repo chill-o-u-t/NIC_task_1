@@ -346,7 +346,7 @@ if __name__ == "__main__":
     stream_handler.setFormatter(CustomLogFormatter())
     stream_handler.setLevel(logging.DEBUG)
     logger.addHandler(stream_handler)
-    logger = logging.getLogger("* TCP_client *")
+    logger = logging.getLogger("TCP_client")
 
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
