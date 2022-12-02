@@ -23,7 +23,7 @@ class Client(QDialog):
         self.tcp_socket.readyRead.connect(self.deal_communication)
 
     @staticmethod
-    def is_empty(data):
+    def is_empty(data) -> bool:
         """
         Проверка объекта на наличие данных,
         если объект пуст или равен 0 возвращает False.
@@ -33,7 +33,7 @@ class Client(QDialog):
         return data == 0 or data == ''
 
     @staticmethod
-    def check_ip(ip):
+    def check_ip(ip) -> bool:
         """
         Проверка введенного ip адреса на соответствие формату.
         :param ip:
@@ -53,6 +53,11 @@ class Client(QDialog):
 
 class UiMainWindow(Client):
     def setup_ui(self, main_window):
+        """
+        Установка элементов интерфейса, расположение в окне
+        :param main_window:
+        :return:
+        """
         main_window.setObjectName("MainWindow")
         main_window.resize(800, 600)
         self.central_widget = QtWidgets.QWidget(main_window)
@@ -152,6 +157,11 @@ class UiMainWindow(Client):
         logging.info('Interface created')
 
     def retranslate_ui(self, main_window):
+        """
+        Установка графическим элементам параметров (текст, функции для кнопок)
+        :param main_window:
+        :return:
+        """
         _translate = QtCore.QCoreApplication.translate
         main_window.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.label_ip.setText(_translate("MainWindow", "IP address"))
@@ -177,6 +187,12 @@ class UiMainWindow(Client):
         self.checkbox.clicked.connect(self.check_data_host_and_port)
 
     def check_timeout(self) -> None:
+        """
+        Проверяет timeout на соответствие условию: от 1 до 10 сек.
+        Проверка, что timeout, установленный пользователем - число.
+        Если таймаут не задан, то остается стандартный 1 сек.
+        :return:
+        """
         timeout = self.text_edit_timeout.toPlainText()
         try:
             timeout_digit = int(timeout)
@@ -187,13 +203,19 @@ class UiMainWindow(Client):
             self.time_out = int(self.text_edit_timeout.toPlainText())
             logging.info(f'Timeout set at {self.time_out} seconds.')
             return
-        logging.info('Timeout is empty, set default as 1')
+        logging.info('Timeout is wrong or empty, set default as 1')
         return
 
     def check_data_host_and_port(self) -> None:
         """
         Проверяет корректность введеных Ip и Port.
+        host: является вида ???.???.???.??? или localhost.
+        Числа в ip не превышают 255.
+        Значение поля host не является пустым или строкой (кроме localhost).
+        port: является числом в диапозоне от 1 до 9999
         :return:
+            None, если есть ошибка
+            make_request(host, port) если все данные прошли валидацию.
         """
         host = self.text_edit_host.toPlainText()
         text_port = self.text_edit_port.toPlainText()
@@ -228,6 +250,11 @@ class UiMainWindow(Client):
         self.make_request(host, port)
 
     def check_delay(self) -> int:
+        """
+        Проверяется, что установленный delay в диапозоне от 10 до 1000.
+        :return:
+            int, в диапозоне от 1 до 100 (сек)
+        """
         delay_text = self.text_edit_delay.toPlainText()
         if self.is_empty(delay_text):
             delay = 10
@@ -290,13 +317,18 @@ class UiMainWindow(Client):
             )
             logging.info('Successful data received')
         else:
-            logging.error(self.message.slow_response.connected_client_count)
+            logging.error('')
             self.message.Clear()
             return
         self.message.Clear()
         self._buffer = b''
 
     def request_std(self, func):
+        """
+        Вывод логов в консоль графического приложения.
+        :param func:
+        :return:
+        """
         def inner(inputStr):
             cursor = QTextCursor(self.logger_console.document())
             cursor.setPosition(0)
