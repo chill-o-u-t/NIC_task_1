@@ -14,7 +14,7 @@ from logger_config import CustomLogFormatter
 
 
 class Client(QDialog):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self._buffer = b''
         self.message = tcp_connection_pb2.WrapperMessage()
@@ -301,7 +301,7 @@ class UiMainWindow(Client):
             logging.error(f'Connection failed: {error}')
 
     def deal_communication(self) -> None:
-        self._buffer += bytes(self.tcp_socket.readAll())
+        self._buffer = bytes(self.tcp_socket.readAll())
         #(message_size, position) = _DecodeVarint32(self._buffer, 0)
         #print(message_size, position)
         #current_message = self._buffer[position::position+1]
