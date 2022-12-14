@@ -5,6 +5,8 @@ from twisted.internet import protocol, reactor
 from twisted.internet.protocol import connectionDone
 from twisted.internet.endpoints import TCP4ServerEndpoint
 from twisted.internet.defer import Deferred
+from google.protobuf.internal.encoder import _VarintBytes
+from google.protobuf.internal.decoder import _DecodeVarint32
 
 import tcp_connection_pb2
 from server_python_twisted.utils import time_now
@@ -35,6 +37,7 @@ class TSServerProtocol(protocol.Protocol):
         self.message = tcp_connection_pb2.WrapperMessage()
         self._buffer = b""
         self.clientInfo = ""
+        self.start = 0
 
     def connectionMade(self):
         self.clientInfo = self.transport.getPeer()
@@ -48,12 +51,19 @@ class TSServerProtocol(protocol.Protocol):
         self._buffer += data
         self.message.Clear()
         try:
-            self.message.ParseFromString(self._buffer)
+            message_size, pos = _DecodeVarint32(self._buffer, self.start)
+            current_message = self._buffer[pos:(message_size + pos)]
+            self.message.ParseFromString(current_message)
+            self._buffer = self._buffer[pos + message_size:]
             logging.info('Message received successfully')
             logging.info(
                 f'Message received from '
                 f'{self.clientInfo.host}:{self.clientInfo.port}'
             )
+        except Exception as error:
+            logging.error(f'Failed received message: {error}')
+            return
+        try:
             if self.message.HasField('request_for_fast_response'):
                 self.fast_response()
                 self._buffer = b""
@@ -75,9 +85,7 @@ class TSServerProtocol(protocol.Protocol):
             )
             return
         except Exception as error:
-            # DATA_RECIEVED_ERROR в другом файле - константа
-            # print(DATA_RECIEVED_ERROR.format(e))
-            pass
+            logging.error(f'Failed sending sata: {error}')
 
     def fast_response(self):
         self.message.Clear()
@@ -94,6 +102,7 @@ class TSServerProtocol(protocol.Protocol):
         reactor.callLater(delay, deferred.callback, self.message)
 
     def send_message(self, message):
+        self.transport.write(_VarintBytes(message.ByteSize()))
         self.transport.write(message.SerializeToString())
         logging.info(f'Message successfully sent')
 
