@@ -8,6 +8,8 @@ from .client import UiMainWindow, MainWindow, Client
 
 
 class TestClient(unittest.TestCase):
+    def setUp(self) -> None:
+        pass
 
     def test_host(self):
         self.assertTrue(Client.check_ip('localhost'))

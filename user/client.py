@@ -6,16 +6,20 @@ from PyQt6.QtGui import QTextCursor
 from PyQt6.QtNetwork import QTcpSocket
 from PyQt6.QtWidgets import QDialog
 from google.protobuf.internal.decoder import _DecodeVarint32
+from google.protobuf.internal.encoder import _VarintBytes
 
 import tcp_connection_pb2
 from user.constants import *
 from logger_config import CustomLogFormatter
+
+DEBUG = True
 
 
 class Client(QDialog):
     def __init__(self) -> None:
         super().__init__()
         self._buffer = b''
+        self.start = 0
         self.message = tcp_connection_pb2.WrapperMessage()
         self.time_out = 1000
         self.tcp_socket = QTcpSocket(self)
@@ -216,6 +220,10 @@ class UiMainWindow(Client):
             None, если есть ошибка
             make_request(host, port) если все данные прошли валидацию.
         """
+        if DEBUG:
+            self.make_request('localhost', 9999)
+            self.label_connected_status.setText('Connected')
+            return
         host = self.text_edit_host.toPlainText()
         text_port = self.text_edit_port.toPlainText()
         if self.is_empty(host):
@@ -285,6 +293,7 @@ class UiMainWindow(Client):
         instance = tcp_connection_pb2.RequestForFastResponse()
         try:
             self.message.request_for_fast_response.CopyFrom(instance)
+            self.tcp_socket.write(_VarintBytes(self.message.ByteSize()))
             self.tcp_socket.write(self.message.SerializeToString())
             logging.info(SEND_FAST_MESSAGE)
             self.message.Clear()
@@ -304,8 +313,10 @@ class UiMainWindow(Client):
 
     def deal_communication(self) -> None:
         self._buffer = bytes(self.tcp_socket.readAll())
-        #(message_size, position) = _DecodeVarint32(self._buffer, 0)
-        self.message.ParseFromString(self._buffer)
+        message_size, pos = _DecodeVarint32(self._buffer, self.start)
+        current_message = self._buffer[pos:(message_size + pos)]
+        self.message.ParseFromString(current_message)
+        self._buffer = self._buffer[pos + message_size:]
         try:
             if self.message.HasField('fast_response'):
                 self.label_output_fast_msg.setText(

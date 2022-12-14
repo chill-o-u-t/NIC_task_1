@@ -1146,3 +1146,57 @@
 "02.12.2022 16:03:51 - [INFO] - Message successfully sent"
 "02.12.2022 16:26:51 - [INFO] - Message received successfully"
 "02.12.2022 16:26:51 - [INFO] - Message received from 127.0.0.1:60357"
+"02.12.2022 17:14:35 - [INFO] - Server started on localhost:9999"
+"02.12.2022 17:14:52 - [ERROR] - Failed received message: 'EchoServer' object has no attribute '_buffer'"
+"02.12.2022 17:15:02 - [INFO] - Server started on localhost:9999"
+"02.12.2022 17:15:22 - [ERROR] - Failed received message: 'EchoServer' object has no attribute '_buffer'"
+"02.12.2022 17:15:50 - [INFO] - Server started on localhost:9999"
+"02.12.2022 17:15:57 - [INFO] - Message received successfully"
+"02.12.2022 17:15:57 - [INFO] - Message received from 127.0.0.1:63685"
+"02.12.2022 17:15:57 - [INFO] - Message successfully sent"
+"02.12.2022 17:15:58 - [INFO] - Message received successfully"
+"02.12.2022 17:15:58 - [INFO] - Message received from 127.0.0.1:63685"
+"02.12.2022 17:15:59 - [INFO] - Message successfully sent"
+"06.12.2022 09:33:49 - [INFO] - Server started on localhost:9999"
+"06.12.2022 09:34:06 - [INFO] - Message received successfully"
+"06.12.2022 09:34:06 - [INFO] - Message received from 127.0.0.1:63331"
+"06.12.2022 09:34:06 - [INFO] - Message successfully sent"
+"06.12.2022 09:34:14 - [INFO] - Message received successfully"
+"06.12.2022 09:34:14 - [INFO] - Message received from 127.0.0.1:63331"
+"06.12.2022 09:34:24 - [INFO] - Message successfully sent"
+"06.12.2022 09:37:24 - [INFO] - Server started on localhost:9999"
+"06.12.2022 09:37:28 - [INFO] - Message received successfully"
+"06.12.2022 09:37:28 - [INFO] - Message received from 127.0.0.1:63396"
+"06.12.2022 09:37:28 - [INFO] - Message successfully sent"
+"06.12.2022 09:38:01 - [INFO] - Message received successfully"
+"06.12.2022 09:38:01 - [INFO] - Message received from 127.0.0.1:63396"
+"06.12.2022 09:38:10 - [INFO] - Message received successfully"
+"06.12.2022 09:38:10 - [INFO] - Message received from 127.0.0.1:63422"
+"06.12.2022 09:38:10 - [INFO] - Message successfully sent"
+"14.12.2022 11:33:41 - [INFO] - Server started on localhost:9999"
+"14.12.2022 11:33:54 - [INFO] - Message received successfully"
+"14.12.2022 11:33:54 - [ERROR] - Task exception was never retrieved
+future: <Task finished name='Task-4' coro=<EchoServer.echo_handle() done, defined at /Users/ivan/dev/tcp_protobuf/server_python_asyncio/asyncio_server.py:32> exception=DecodeError('Field number 0 is illegal.')>"
+Traceback (most recent call last):
+  File "/Users/ivan/dev/tcp_protobuf/server_python_asyncio/asyncio_server.py", line 50, in echo_handle
+    self.message.ParseFromString(current_message)
+  File "/Users/ivan/dev/tcp_protobuf/venv/lib/python3.9/site-packages/google/protobuf/message.py", line 199, in ParseFromString
+    return self.MergeFromString(serialized)
+  File "/Users/ivan/dev/tcp_protobuf/venv/lib/python3.9/site-packages/google/protobuf/internal/python_message.py", line 1128, in MergeFromString
+    if self._InternalParse(serialized, 0, length) != length:
+  File "/Users/ivan/dev/tcp_protobuf/venv/lib/python3.9/site-packages/google/protobuf/internal/python_message.py", line 1178, in InternalParse
+    raise message_mod.DecodeError('Field number 0 is illegal.')
+google.protobuf.message.DecodeError: Field number 0 is illegal.
+"14.12.2022 11:37:09 - [INFO] - Server started on localhost:9999"
+"14.12.2022 11:37:13 - [INFO] - Message received successfully"
+"14.12.2022 11:37:13 - [INFO] - Message received from 127.0.0.1:51941"
+"14.12.2022 11:37:13 - [INFO] - Message successfully sent"
+"14.12.2022 11:38:15 - [INFO] - Message received successfully"
+"14.12.2022 11:38:15 - [ERROR] - Task exception was never retrieved
+future: <Task finished name='Task-4' coro=<EchoServer.echo_handle() done, defined at /Users/ivan/dev/tcp_protobuf/server_python_asyncio/asyncio_server.py:32> exception=IndexError('index out of range')>"
+Traceback (most recent call last):
+  File "/Users/ivan/dev/tcp_protobuf/server_python_asyncio/asyncio_server.py", line 48, in echo_handle
+    message_size, pos = _DecodeVarint32(self._buffer, self.start)
+  File "/Users/ivan/dev/tcp_protobuf/venv/lib/python3.9/site-packages/google/protobuf/internal/decoder.py", line 111, in DecodeVarint
+    b = buffer[pos]
+IndexError: index out of range
