@@ -28,5 +28,5 @@
 This project is a client-server application that transmits requests through a protobuff asynchronously using threads.
 
 ## We worked on the project
-- [Morozov Ivan](https://t.me/chi_ll_o_u_t)
+- [Ivan Morozov](https://t.me/chi_ll_o_u_t)
 - [Dmitrii Sergevnin](https://t.me/d1mserg)
