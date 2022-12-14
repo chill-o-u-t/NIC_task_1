@@ -6,8 +6,8 @@ from PyQt5.QtCore import *
 from PyQt5.QtWidgets import QDialog, QApplication
 from PyQt5.QtNetwork import *
 
-import utils
-from logger_config import logger_conf
+from server_python_twisted import utils
+from server_python_twisted.logger_config import logger_conf
 
 
 class ClientWindow(QDialog):

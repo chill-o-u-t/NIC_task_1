@@ -6,7 +6,7 @@ BASE_DIR = Path(__file__).parent
 
 
 def logger_conf():
-    logger_dir = BASE_DIR / 'logs'
+    logger_dir = BASE_DIR / 'server_python_twisted' / 'logs'
     logger_dir.mkdir(exist_ok=True)
     logger_file = logger_dir / 'task_1_logger.log'
     rotating_handler = RotatingFileHandler(

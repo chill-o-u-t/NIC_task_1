@@ -10,9 +10,6 @@ from google.protobuf.internal.encoder import _VarintBytes
 from google.protobuf.internal.decoder import _DecodeVarint32
 
 import tcp_connection_pb2
-#
-#
-# from server_python_twisted.utils import time_now
 from utils import time_now
 
 DEBUG = True
@@ -133,9 +130,9 @@ class TSServerFactory(protocol.Factory):
 
 
 if __name__ == '__main__':
-    from logging_config import configure_logging
+    from logger_config import logger_conf
 
-    configure_logging()
+    logger_conf()
     if not check_all():
         logging.critical('Started failed: empty host or port')
     endpoint = TCP4ServerEndpoint(reactor, PORT)
