@@ -1,11 +1,3 @@
-import datetime
-
-IP = '127.0.0.1'
-PORT = 8000
-
-VARINT_32 = 32
-
-
 def time_now():
-    return datetime.datetime.now().isoformat()
-
+    from datetime import datetime
+    return str(datetime.now().strftime("%Y%m%dT%H%M%S.%f")[:-3])
