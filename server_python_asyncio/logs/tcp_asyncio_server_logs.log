@@ -1200,3 +1200,4 @@ Traceback (most recent call last):
   File "/Users/ivan/dev/tcp_protobuf/venv/lib/python3.9/site-packages/google/protobuf/internal/decoder.py", line 111, in DecodeVarint
     b = buffer[pos]
 IndexError: index out of range
+"14.12.2022 17:28:48 - [INFO] - Server started on localhost:9999"
