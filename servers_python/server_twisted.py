@@ -130,7 +130,7 @@ class TSServerFactory(protocol.Factory):
 
 
 if __name__ == '__main__':
-    from logger_config import logger_conf
+    from logging_config import logger_conf
 
     logger_conf()
     if not check_all():
