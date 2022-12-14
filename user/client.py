@@ -1,10 +1,10 @@
 import logging
 import re
 
-from PyQt6 import QtCore, QtWidgets
-from PyQt6.QtGui import QTextCursor
-from PyQt6.QtNetwork import QTcpSocket
-from PyQt6.QtWidgets import QDialog
+from PyQt5 import QtCore, QtWidgets
+from PyQt5.QtGui import QTextCursor
+from PyQt5.QtNetwork import QTcpSocket
+from PyQt5.QtWidgets import QDialog
 from google.protobuf.internal.decoder import _DecodeVarint32
 from google.protobuf.internal.encoder import _VarintBytes
 

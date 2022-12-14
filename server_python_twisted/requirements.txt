@@ -6,9 +6,6 @@ google==3.0.0
 hyperlink==21.0.0
 idna==3.4
 incremental==22.10.0
-PyQt5
-PyQt5-Qt5
-PyQt5-sip
 six==1.16.0
 soupsieve==2.3.2.post1
 Twisted==22.10.0
