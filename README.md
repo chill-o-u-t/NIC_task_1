@@ -1,5 +1,8 @@
 # TCP-Protobuf Client-Server (asyncio & twisted)
 
+## About
+- all code in submaster branch
+
 ## Technologies
 - [Python](https://www.python.org/)
 - [PyQt5](https://www.qt.io)
