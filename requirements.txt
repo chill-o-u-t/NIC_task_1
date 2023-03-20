@@ -16,9 +16,6 @@ importlib-resources==5.10.0
 incremental==22.10.0
 multidict==6.0.2
 protobuf==3.18.3
-PyQt6==6.4.0
-PyQt6-Qt6==6.4.1
-PyQt6-sip==13.4.0
 pyvarint==0.0.1a2
 six==1.16.0
 soupsieve==2.3.2.post1

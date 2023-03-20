@@ -1,16 +1,29 @@
 import logging
 import re
 
-from PyQt6 import QtCore, QtWidgets
-from PyQt6.QtGui import QTextCursor
-from PyQt6.QtNetwork import QTcpSocket
-from PyQt6.QtWidgets import QDialog
 from google.protobuf.internal.decoder import _DecodeVarint32
 from google.protobuf.internal.encoder import _VarintBytes
 
 import tcp_connection_pb2
+
 from user.constants import *
 from logger_config import CustomLogFormatter
+
+
+macbook = True
+
+
+if macbook:
+    from PyQt6 import QtCore, QtWidgets
+    from PyQt6.QtGui import QTextCursor
+    from PyQt6.QtNetwork import QTcpSocket
+    from PyQt6.QtWidgets import QDialog
+else:
+    from PyQt5 import QtCore, QtWidgets
+    from PyQt5.QtGui import QTextCursor
+    from PyQt5.QtNetwork import QTcpSocket
+    from PyQt5.QtWidgets import QDialog
+
 
 DEBUG = True
 
@@ -48,7 +61,7 @@ class Client(QDialog):
             '\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', ip
         ) is None:
             return False
-        for block in map(int,  ip.split('.')):
+        for block in map(int, ip.split('.')):
             if block > 255:
                 return False
         return True
@@ -193,7 +206,7 @@ class UiMainWindow(Client):
         """
         Проверяет timeout на соответствие условию: от 1 до 10 сек.
         Проверка, что timeout, установленный пользователем - число.
-        Если таймаут не задан, то остается стандартный 1 сек.
+        Если таймаут не задан, то устанавливается стандартный 1 сек.
         :return:
         """
         timeout = self.text_edit_timeout.toPlainText()
@@ -340,17 +353,20 @@ class UiMainWindow(Client):
         :param func:
         :return:
         """
+
         def inner(inputStr):
             cursor = QTextCursor(self.logger_console.document())
             cursor.setPosition(0)
             self.logger_console.setTextCursor(cursor)
             self.logger_console.insertPlainText(inputStr)
             return func(inputStr)
+
         return inner
 
 
 if __name__ == "__main__":
     import sys
+
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
     stream_handler = logging.StreamHandler()
